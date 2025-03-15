@@ -1,0 +1,47 @@
+services:
+  devrunner:
+    image: "devrunner-alc-rimac"
+    restart: no
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+      args:
+        - USER_UID=${USER_UID}
+    volumes:
+      - type: bind
+        source: ./
+        target: /home/devrunner/src
+    environment:
+      - ENV=${ENV}
+      - PORT=${PORT}
+      - REL=${REL}
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SESSION_KEY=${SESSION_KEY}
+    ports:
+      - "8080:8080"
+      - "8010:8010"
+  db:
+    image: postgres:16-alpine
+    restart: no
+    user: postgres
+    volumes:
+      - db-data-dev:/var/lib/postgresql/data
+      - type: bind
+        source: ./db/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+        read_only: true
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data-dev:
+

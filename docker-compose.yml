@@ -1,0 +1,32 @@
+networks:
+  http_network:
+    external: true
+
+services:
+  webserver:
+    image: "elbromasmc/alc-ti"
+    restart: unless-stopped
+    environment:
+      - ENV=${ENV}
+      - PORT=${PORT}
+      - REL=${REL}
+    networks:
+      - http_network
+    labels:
+      - "traefik.enable=true"
+      # Middleware
+      - "traefik.http.middlewares.redirect-non-www-to-www.redirectregex.permanent=true"
+      - "traefik.http.middlewares.redirect-non-www-to-www.redirectregex.regex=^https://${WEBSERVER_HOSTNAME}/(.*)"
+      - "traefik.http.middlewares.redirect-non-www-to-www.redirectregex.replacement=https://www.${WEBSERVER_HOSTNAME}/$${1}"
+      # The application
+      - "traefik.docker.network=http_network"
+      - "traefik.http.routers.webserver.entrypoints=websecure"
+      - "traefik.http.routers.webserver.rule=Host(`www.${WEBSERVER_HOSTNAME}`) || Host(`${WEBSERVER_HOSTNAME}`)"
+      - "traefik.http.routers.webserver.middlewares=redirect-non-www-to-www"
+      - "traefik.http.routers.webserver.tls=true"
+      - "traefik.http.routers.webserver.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.webserver.tls.domains[0].main=www.${WEBSERVER_HOSTNAME}"
+      - "traefik.http.routers.webserver.tls.domains[0].sans=${WEBSERVER_HOSTNAME}"
+      - "traefik.http.routers.webserver.tls.options=default"
+      - "traefik.http.services.webserver.loadbalancer.server.port=8080"
+      - "traefik.http.services.webserver.loadbalancer.server.scheme=http"

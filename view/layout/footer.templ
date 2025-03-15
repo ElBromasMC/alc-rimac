@@ -1,0 +1,63 @@
+package layout
+
+templ Footer() {
+	<footer class="bg-livid text-gray-400">
+		<div class="px-4 max-w-7xl mx-auto">
+			<div class="grid grid-cols-2 gap-y-6 py-16 lg:grid-cols-4">
+				<!-- Contact information -->
+				<div>
+					<h2 class="font-bold text-white">Dónde estamos</h2>
+					<ul class="mt-3 space-y-2">
+						<li>
+							<a
+								class="hover:text-white"
+								href="https://goo.gl/maps/JyjK5sHSXLaATUtP8"
+								target="_blank"
+							>
+								Ca. las Magnolias, Villa María del Triunfo. Perú
+							</a>
+						</li>
+						<li>Lunes a Viernes <br/> 9am - 6pm</li>
+						<li><a class="hover:text-white" href="tel:+51997006828">(+51) 997 006 828</a></li>
+					</ul>
+				</div>
+				<!-- Social media -->
+				<div>
+					<h2 class="font-bold text-white">Comunidad</h2>
+					<ul class="mt-3 space-y-2">
+						<li><a class="hover:text-white" href="#">Twitter</a></li>
+						<li><a class="hover:text-white" href="#">Facebook</a></li>
+						<li><a class="hover:text-white" href="#">Youtube</a></li>
+					</ul>
+				</div>
+				<!-- Navigation -->
+				<div>
+					<h2 class="font-bold text-white">Navegación</h2>
+					<ul class="mt-3 space-y-2">
+						<li><a class="hover:text-white" href="#about">Nosotros</a></li>
+						<li><a class="hover:text-white" href="#services">Servicios</a></li>
+						<li><a class="hover:text-white" href="#contact">Contacto</a></li>
+					</ul>
+				</div>
+				<!-- Policies -->
+				<div>
+					<h2 class="font-bold text-white">Políticas</h2>
+					<ul class="mt-3 space-y-2">
+						<li><a class="hover:text-white" href="#">Aviso legal</a></li>
+						<li><a class="hover:text-white" href="#">Política de privacidad</a></li>
+						<li><a class="hover:text-white" href="#">Política de cookies</a></li>
+					</ul>
+				</div>
+			</div>
+			<hr/>
+			<div class="flex items-center gap-4 py-4">
+				<img
+					class="w-36 aspect-[4/1] object-contain"
+					src="/static/img/logo_white.png"
+					alt="All Last Computing"
+				/>
+				<span class="font-semibold">Todos los derechos reservados.</span>
+			</div>
+		</div>
+	</footer>
+}

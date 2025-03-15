@@ -1,0 +1,209 @@
+package page
+
+import "alc/view/layout"
+
+templ Index() {
+	@layout.BasePage("All Last Computing") {
+		<main>
+			<div>
+				<my-carousel class="h-[calc(100dvh-9rem)]">
+					<div>
+						<img class="relative object-cover w-full h-full opacity-10" src="/static/img/electronic.png" alt="Fondo"/>
+						<section class="absolute max-w-7xl mx-auto inset-x-0 inset-y-0 px-4 py-16">
+							<div class="h-full grid items-center gap-6 lg:grid-cols-5">
+								<div class="space-y-6 lg:space-y-9 lg:col-span-3">
+									<h2 class="text-4xl uppercase font-bold lg:text-5xl">Odontología digital</h2>
+									<hr class="w-24 border border-t-[3px] border-logored lg:w-48"/>
+									<p class="text-lg lg:text-2xl">
+										Descubre una nueva era en cuidado dental. Nuestro servicio de odontología digital combina la más avanzada
+										tecnología con la experiencia clínica, ofreciendo diagnósticos precisos, tratamientos personalizados y resultados
+										estéticos superiores. Transforma tu sonrisa en manos expertas y con herramientas del futuro.
+										¡Bienvenido a la revolución digital dental!
+									</p>
+									<svg class="relative w-16 h-16 -left-5 text-logored" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+										<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 14-4-4m4 4 4-4"></path>
+									</svg>
+								</div>
+								<div class="hidden relative -top-10 lg:col-span-2 lg:block">
+									<img src="/static/img/dentist.png" alt="Dentista"/>
+								</div>
+							</div>
+						</section>
+					</div>
+				</my-carousel>
+				<section id="about" class="py-[4.5rem]">
+					<h2 class="flex justify-center py-6 text-white font-extrabold text-3xl uppercase bg-livid">Nosotros</h2>
+					<div class="px-4 py-16 max-w-7xl mx-auto space-y-4">
+						<h3 class="uppercase text-center text-2xl font-extrabold text-azure">Nuestra compañía</h3>
+						<div class="flex justify-center">
+							<hr class="w-40 border border-t-2 border-logored"/>
+						</div>
+						<p class="text-center">
+							ALC es una empresa peruana de tecnología que impulsa la transformación digital en diversos sectores
+							a través de soluciones innovadoras y personalizadas. Nos especializamos en Odontología Digital,
+							Desarrollo de Software, Asistentes Virtuales con IA y Advanced Rollout, brindando a nuestros clientes las herramientas necesarias
+							para optimizar sus procesos, mejorar su eficiencia y alcanzar el éxito en un entorno cada vez más competitivo.
+						</p>
+					</div>
+					<div class="px-4 py-16 bg-[#f6f4f2]">
+						<div class="flex flex-col gap-16 max-w-7xl mx-auto lg:flex-row">
+							<div class="space-y-4 flex-1">
+								<h3 class="uppercase text-left text-2xl font-extrabold text-azure">Visión</h3>
+								<hr class="w-full border border-t-2 border-logored"/>
+								<p class="text-left">
+									Ser líderes en la provisión de soluciones tecnológicas de vanguardia en Perú y Latinoamérica, impulsando
+									la innovación y el desarrollo sostenible en los sectores donde operamos.
+								</p>
+							</div>
+							<div class="space-y-4 flex-1">
+								<h3 class="uppercase text-right text-2xl font-extrabold text-azure">Misión</h3>
+								<hr class="w-full border border-t-2 border-logored"/>
+								<p class="text-right">
+									Desarrollar e implementar soluciones tecnológicas innovadoras que generen valor para nuestros clientes,
+									mejorando sus procesos, optimizando sus recursos y facilitándoles el acceso a las últimas tecnologías.
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class="px-4 pt-16 max-w-7xl mx-auto space-y-4">
+						<h3 class="uppercase text-center text-2xl font-extrabold text-azure">Nuestro objetivo</h3>
+						<div class="flex justify-center">
+							<hr class="w-40 border border-t-2 border-logored"/>
+						</div>
+						<p class="text-center">
+							En ALC, nuestro objetivo es ser un socio estratégico para nuestros clientes, acompañándolos en su camino hacia
+							la transformación digital y brindándoles soluciones que se adapten a sus necesidades específicas y les permitan
+							alcanzar sus objetivos de negocio.
+						</p>
+					</div>
+				</section>
+				<section id="services" class="py-[4.5rem]">
+					<h2 class="flex justify-center py-6 text-white font-extrabold text-3xl uppercase bg-livid">Servicios</h2>
+					<div class="px-4 pt-16 max-w-7xl mx-auto">
+						<ul class="grid gap-16 lg:grid-cols-2">
+							<li class="flex flex-col gap-4 lg:flex-row">
+								<div class="self-center flex-shrink-0 w-40 h-40 border-2 border-logored aspect-square rounded-full overflow-hidden">
+									<img src="" alt=""/>
+								</div>
+								<div class="space-y-3">
+									<h3 class="text-lg uppercase font-extrabold text-azure">Odontología digital</h3>
+									<hr class="w-24 border border-t-2 border-logored"/>
+									<p>
+										Ofrecemos soluciones de vanguardia para la odontología moderna, utilizando tecnología de impresión 3D
+										para la creación de prótesis dentales personalizadas y de alta precisión.
+									</p>
+								</div>
+							</li>
+							<li class="flex flex-col gap-4 lg:flex-row">
+								<div class="self-center flex-shrink-0 w-40 h-40 border-2 border-logored aspect-square rounded-full overflow-hidden">
+									<img src="" alt=""/>
+								</div>
+								<div class="space-y-3">
+									<h3 class="text-lg uppercase font-extrabold text-azure">Desarrollo de Software</h3>
+									<hr class="w-24 border border-t-2 border-logored"/>
+									<p>
+										Creamos soluciones de software a medida que se adaptan a las necesidades específicas de cada cliente,
+										optimizando sus procesos y mejorando su eficiencia operativa.
+									</p>
+								</div>
+							</li>
+							<li class="flex flex-col gap-4 lg:flex-row">
+								<div class="self-center flex-shrink-0 w-40 h-40 border-2 border-logored aspect-square rounded-full overflow-hidden">
+									<img src="" alt=""/>
+								</div>
+								<div class="space-y-3">
+									<h3 class="text-lg uppercase font-extrabold text-azure">Advanced Rollout</h3>
+									<hr class="w-24 border border-t-2 border-logored"/>
+									<p>
+										Implementación eficiente y escalable de nuevas tecnologías y soluciones en entornos empresariales.
+										Aseguramos un despliegue fluido y sin interrupciones, minimizando riesgos y maximizando el retorno
+										de la inversión.
+									</p>
+								</div>
+							</li>
+							<li class="flex flex-col gap-4 lg:flex-row">
+								<div class="self-center flex-shrink-0 w-40 h-40 border-2 border-logored aspect-square rounded-full overflow-hidden">
+									<img src="" alt=""/>
+								</div>
+								<div class="space-y-3">
+									<h3 class="text-lg uppercase font-extrabold text-azure">Asistentes Virtuales con IA</h3>
+									<hr class="w-24 border border-t-2 border-logored"/>
+									<p>
+										Implementación de asistentes virtuales inteligentes que automatizan tareas, mejoran la atención
+										al cliente y optimizan la gestión de la información. Nuestras soluciones con IA se adaptan a
+										las necesidades de cada empresa, proporcionando una experiencia personalizada e intuitiva.
+									</p>
+								</div>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section id="contact" class="py-[4.5rem]">
+					<h2 class="flex justify-center py-6 text-white font-extrabold text-3xl uppercase bg-livid">Contacto</h2>
+					<div class="flex flex-col gap-16 px-4 py-16 max-w-7xl mx-auto lg:flex-row">
+						<div class="flex-1 space-y-4">
+							<h3 class="uppercase text-2xl font-extrabold text-azure">Contáctenos</h3>
+							<hr class="w-32 border border-t-2 border-logored"/>
+						</div>
+						<div class="flex-1 space-y-4">
+							<h3 class="uppercase text-2xl font-extrabold text-azure">Visítanos</h3>
+							<hr class="w-32 border border-t-2 border-logored"/>
+							<p>
+								Estamos a tu disposición para hacer un presupuesto a tu medida que cumpla todas tus necesidades. No dudes en llamarnos. Te esperamos.
+							</p>
+							<hr class="w-full border border-t-1"/>
+							<div class="space-y-1">
+								<p>
+									<svg class="inline w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path fill-rule="evenodd" d="M7 2a2 2 0 0 0-2 2v1a1 1 0 0 0 0 2v1a1 1 0 0 0 0 2v1a1 1 0 1 0 0 2v1a1 1 0 1 0 0 2v1a1 1 0 1 0 0 2v1a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H7Zm3 8a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm-1 7a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3 1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1Z" clip-rule="evenodd"></path>
+									</svg>
+									<strong>Dirección:</strong>
+									<a
+										class="font-semibold text-azure hover:text-livid"
+										href="https://goo.gl/maps/JyjK5sHSXLaATUtP8"
+										target="_blank"
+									>
+										Ca. las Magnolias, Villa María del Triunfo. Perú
+									</a>
+								</p>
+								<p>
+									<svg class="inline w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path d="M7.978 4a2.553 2.553 0 0 0-1.926.877C4.233 6.7 3.699 8.751 4.153 10.814c.44 1.995 1.778 3.893 3.456 5.572 1.68 1.679 3.577 3.018 5.57 3.459 2.062.456 4.115-.073 5.94-1.885a2.556 2.556 0 0 0 .001-3.861l-1.21-1.21a2.689 2.689 0 0 0-3.802 0l-.617.618a.806.806 0 0 1-1.14 0l-1.854-1.855a.807.807 0 0 1 0-1.14l.618-.62a2.692 2.692 0 0 0 0-3.803l-1.21-1.211A2.555 2.555 0 0 0 7.978 4Z"></path>
+									</svg>
+									<strong>Teléfono:</strong>
+									<span>(+51) 997 006 828</span>
+								</p>
+								<p>
+									<svg class="inline w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path d="M2.038 5.61A2.01 2.01 0 0 0 2 6v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6c0-.12-.01-.238-.03-.352l-.866.65-7.89 6.032a2 2 0 0 1-2.429 0L2.884 6.288l-.846-.677Z"></path>
+										<path d="M20.677 4.117A1.996 1.996 0 0 0 20 4H4c-.225 0-.44.037-.642.105l.758.607L12 10.742 19.9 4.7l.777-.583Z"></path>
+									</svg>
+									<strong>Email:</strong>
+									<span>ceo@alc-ti.com</span>
+								</p>
+								<p>
+									<svg class="inline w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path fill-rule="evenodd" d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6Zm4.996 2a1 1 0 0 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM11 8a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6Zm-4.004 3a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM11 11a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6Zm-4.004 3a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM11 14a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6Z" clip-rule="evenodd"></path>
+									</svg>
+									<strong>Web:</strong>
+									<span>alc-ti.com</span>
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class="pt-16">
+						<iframe
+							src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d975.1277676481702!2d-76.9556838!3d-12.1455691!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9105b88c590ad1d9%3A0x3178b0b72e2b9241!2sCa.%20las%20Magnolias%2C%20Villa%20Mar%C3%ADa%20del%20Triunfo%2015811!5e0!3m2!1ses-419!2spe!4v1725853415306!5m2!1ses-419!2spe"
+							width="100%"
+							height="450"
+							style="border:0;"
+							allowfullscreen=""
+							loading="lazy"
+							referrerpolicy="no-referrer-when-downgrade"
+						></iframe>
+					</div>
+				</section>
+			</div>
+		</main>
+	}
+}
