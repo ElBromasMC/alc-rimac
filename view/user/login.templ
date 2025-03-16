@@ -4,7 +4,10 @@ import "alc/view/layout"
 
 templ LoginShow(to string) {
 	@layout.Base("Login") {
-		<main class="flex justify-center items-center py-12 min-h-dvh bg-sky-100 sm:px-4">
+		<main class="flex flex-col gap-6 justify-center items-center py-12 min-h-dvh bg-sky-100 sm:px-4">
+			<div class="flex justify-center">
+				<img src="/static/img/lenovo.svg"/>
+			</div>
 			<section class="px-9 py-16 w-full bg-white sm:max-w-xl sm:rounded-3xl">
 				<div class="flex gap-4 items-center">
 					<h2 class="font-semibold text-4xl">Inicia sesión</h2>

@@ -1,5 +1,13 @@
 package component
 
+templ InfoMessage(msg string) {
+	<span class="text-black">
+		{ msg }
+	</span>
+}
+
 templ ErrorMessage(msg string) {
-	{ msg }
+	<span class="text-red-600">
+		{ msg }
+	</span>
 }

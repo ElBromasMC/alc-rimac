@@ -62,14 +62,11 @@ func Admin(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func RoleAdmin(next echo.HandlerFunc) echo.HandlerFunc {
+func Logged(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		u, ok := auth.GetUser(c.Request().Context())
+		_, ok := auth.GetUser(c.Request().Context())
 		if !ok {
-			return c.Redirect(http.StatusFound, "/login?to=/admin")
-		}
-		if u.Role != auth.AdminRole {
-			return c.Redirect(http.StatusFound, "/login?to=/admin")
+			return c.Redirect(http.StatusFound, "/login?to=/")
 		}
 		return next(c)
 	}

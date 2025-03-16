@@ -1,6 +1,8 @@
 package main
 
 import (
+	"alc/handler/admin"
+	"alc/handler/constancia"
 	"alc/handler/public"
 	"alc/handler/util"
 	middle "alc/middleware"
@@ -48,15 +50,24 @@ func main() {
 
 	// Initialize services
 	us := service.NewAuthService(dbpool)
+	cs := service.NewConstanciaService(dbpool)
 
 	// Initialize handlers
 	ph := public.Handler{
 		AuthService: us,
 	}
 
+	ch := constancia.Handler{
+		ConstanciaService: cs,
+	}
+
+	ah := admin.Handler{
+		ConstanciaService: cs,
+	}
+
 	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	//e.Use(middleware.Logger())
+	//e.Use(middleware.Recover())
 	e.Use(middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{
 		RedirectCode: http.StatusMovedPermanently,
 	}))
@@ -68,12 +79,16 @@ func main() {
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(key))))
 
 	authMiddleware := middle.Auth(us)
+	adminMiddleware := middle.Admin
+	loggedMiddleware := middle.Logged
 
 	// Static files
 	static(e)
 
 	// Page routes
-	e.GET("/", ph.HandleIndexShow, authMiddleware)
+	e.GET("/", ch.HandleFormShow, authMiddleware, loggedMiddleware)
+	e.GET("/cliente", ch.HandleUsuarioFetch, authMiddleware, loggedMiddleware)
+	e.GET("/equipo", ch.HandleEquipoFetch, authMiddleware, loggedMiddleware)
 
 	// Auth routes
 	e.GET("/login", ph.HandleLoginShow)
@@ -81,6 +96,13 @@ func main() {
 	e.POST("/login", ph.HandleLogin)
 	e.POST("/signup", ph.HandleSignup)
 	e.GET("/logout", ph.HandleLogout)
+
+	// Admin routes
+	g1 := e.Group("/admin")
+	g1.Use(authMiddleware, adminMiddleware)
+	g1.GET("", ah.HandleIndexShow)
+	g1.POST("/equipos", ah.HandleEquiposInsertion)
+	g1.POST("/clientes", ah.HandleClientesInsertion)
 
 	// Error handler
 	e.HTTPErrorHandler = util.HTTPErrorHandler

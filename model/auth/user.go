@@ -24,6 +24,7 @@ type User struct {
 	Email     string    `form:"email"`
 	Password  string    `form:"password"`
 	Role      UserRole  `form:"-"`
+	Dni       string    `form:"dni"`
 	CreatedAt time.Time `form:"-"`
 }
 

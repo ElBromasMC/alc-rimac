@@ -33,8 +33,8 @@ func (us Auth) GetUser(id uuid.UUID) (auth.User, error) {
 }
 
 func (us Auth) InsertUser(u auth.User, hpass []byte) error {
-	if _, err := us.db.Exec(context.Background(), `INSERT INTO users (name, email, hashed_password)
-VALUES ($1, $2, $3)`, u.Name, u.Email, string(hpass)); err != nil {
+	if _, err := us.db.Exec(context.Background(), `INSERT INTO users (name, email, hashed_password, dni)
+VALUES ($1, $2, $3, $4)`, u.Name, u.Email, string(hpass), u.Dni); err != nil {
 		// TODO: Test and handle unique email condition
 		return echo.NewHTTPError(http.StatusConflict, "Ya existe una cuenta con el email proporcionado")
 	}
