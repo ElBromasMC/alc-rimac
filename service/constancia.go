@@ -193,13 +193,13 @@ func (s Constancia) BulkInsertClientes(ctx context.Context, clientes []constanci
 	return err
 }
 
-func (s Constancia) GeneratePDF(ctx context.Context, c constancia.Constancia, inventarios []constancia.Inventario) error {
+func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constancia.Constancia, inventarios []constancia.Inventario) error {
 	descSimpleText := "points:8, scale:1 abs, pos:bl, offset: %.2f %.2f, rot:0, mo:0, c: 0 0 0"
 	descSmallText := "points:6, scale:1 abs, pos:bl, offset: %.2f %.2f, rot:0, mo:0, c: 0 0 0"
 	descX := "points:8, scale:1 abs, pos:bl, offset: %.2f %.2f, rot:0, mo:2, c: 0 0 0, strokecolor: 0 0 0"
 	addText := func(page, text string, x, y float64) error {
 		err := api.AddTextWatermarksFile(
-			"output.pdf",
+			filename,
 			"",
 			[]string{page},
 			true,
@@ -211,7 +211,7 @@ func (s Constancia) GeneratePDF(ctx context.Context, c constancia.Constancia, in
 	}
 	addSText := func(page, text string, x, y float64) error {
 		err := api.AddTextWatermarksFile(
-			"output.pdf",
+			filename,
 			"",
 			[]string{page},
 			true,
@@ -223,7 +223,7 @@ func (s Constancia) GeneratePDF(ctx context.Context, c constancia.Constancia, in
 	}
 	addX := func(page string, x, y float64) error {
 		err := api.AddTextWatermarksFile(
-			"output.pdf",
+			filename,
 			"",
 			[]string{page},
 			true,

@@ -9,7 +9,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"io"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -134,10 +138,73 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 	}
 
-	err = h.ConstanciaService.GeneratePDF(context.Background(), cta, inventarios)
+	// Generate PDF
+	// Step 1: Create a temporary file to get a unique filename.
+	tempFile, err := os.CreateTemp("./pdf", "output-*.pdf")
 	if err != nil {
-		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
+		return util.Render(c, http.StatusInternalServerError, component.ErrorMessage("Failed to create temp file"))
+	}
+	tempFilename := tempFile.Name()
+	tempFile.Close() // Close immediately since we'll write our own copy
+
+	// Ensure the temporary file is deleted after we're done.
+	//defer os.Remove(tempFilename)
+
+	// Step 2: Open the base PDF file.
+	srcFile, err := os.Open("./pdf/constancia.pdf")
+	if err != nil {
+		return util.Render(c, http.StatusInternalServerError, component.ErrorMessage("Failed to open base PDF"))
+	}
+	defer srcFile.Close()
+
+	// Step 3: Create (or overwrite) the temporary file and copy the base PDF into it.
+	dstFile, err := os.Create(tempFilename)
+	if err != nil {
+		return util.Render(c, http.StatusInternalServerError, component.ErrorMessage("Failed to create destination file"))
+	}
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		dstFile.Close()
+		return util.Render(c, http.StatusInternalServerError, component.ErrorMessage("Failed to copy PDF"))
+	}
+	dstFile.Close()
+
+	// Step 4: Modify the PDF in place using your GeneratePDF function.
+	err = h.ConstanciaService.GeneratePDF(context.Background(), tempFilename, cta, inventarios)
+	if err != nil {
+		return util.Render(c, http.StatusInternalServerError, component.ErrorMessage(err.Error()))
 	}
 
-	return c.String(http.StatusOK, "Data recibida!")
+	// Build the URL for the download endpoint.
+	// We send only the file base name as a parameter.
+	downloadURL := fmt.Sprintf("/download?file=%s&serie=%s&usuario=%s",
+		url.QueryEscape(filepath.Base(tempFilename)),
+		url.QueryEscape(portatil.Serie),
+		url.QueryEscape(cta.UsuarioNombre),
+	)
+	// Instead of returning the file directly, set the HX-Redirect header.
+	c.Response().Header().Set("HX-Redirect", downloadURL)
+	return util.Render(c, http.StatusOK, component.InfoMessage("Cargado exitosamente"))
+}
+
+// GET handler that serves the PDF file.
+func (h *Handler) DownloadPDFHandler(c echo.Context) error {
+	// Get the file name from the query string.
+	fileName := c.QueryParam("file")
+	serie := c.QueryParam("serie")
+	usuario := c.QueryParam("usuario")
+	if fileName == "" {
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	// Construct the full path to the file.
+	filePath := filepath.Join("./pdf", fileName)
+
+	// Clean up: remove the file after serving.
+	defer os.Remove(filePath)
+
+	// Serve the file to the user with a custom download name.
+	err := c.Attachment(filePath, fmt.Sprintf("%s-%s.pdf", serie, usuario))
+
+	return err
 }
