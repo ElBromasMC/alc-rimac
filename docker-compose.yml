@@ -4,29 +4,51 @@ networks:
 
 services:
   webserver:
-    image: "elbromasmc/alc-ti"
+    image: "elbromasmc/alc-rimac"
     restart: unless-stopped
+    volumes:
+      - ./pdf:/pdf
     environment:
       - ENV=${ENV}
       - PORT=${PORT}
       - REL=${REL}
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SESSION_KEY=${SESSION_KEY}
     networks:
       - http_network
     labels:
       - "traefik.enable=true"
-      # Middleware
-      - "traefik.http.middlewares.redirect-non-www-to-www.redirectregex.permanent=true"
-      - "traefik.http.middlewares.redirect-non-www-to-www.redirectregex.regex=^https://${WEBSERVER_HOSTNAME}/(.*)"
-      - "traefik.http.middlewares.redirect-non-www-to-www.redirectregex.replacement=https://www.${WEBSERVER_HOSTNAME}/$${1}"
-      # The application
       - "traefik.docker.network=http_network"
       - "traefik.http.routers.webserver.entrypoints=websecure"
-      - "traefik.http.routers.webserver.rule=Host(`www.${WEBSERVER_HOSTNAME}`) || Host(`${WEBSERVER_HOSTNAME}`)"
-      - "traefik.http.routers.webserver.middlewares=redirect-non-www-to-www"
+      - "traefik.http.routers.webserver.rule=Host(`${WEBSERVER_HOSTNAME}`)"
       - "traefik.http.routers.webserver.tls=true"
       - "traefik.http.routers.webserver.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.webserver.tls.domains[0].main=www.${WEBSERVER_HOSTNAME}"
-      - "traefik.http.routers.webserver.tls.domains[0].sans=${WEBSERVER_HOSTNAME}"
+      - "traefik.http.routers.webserver.tls.domains[0].main=${WEBSERVER_HOSTNAME}"
       - "traefik.http.routers.webserver.tls.options=default"
       - "traefik.http.services.webserver.loadbalancer.server.port=8080"
       - "traefik.http.services.webserver.loadbalancer.server.scheme=http"
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    user: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - type: bind
+        source: ./db/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+        read_only: true
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
+

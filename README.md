@@ -15,6 +15,9 @@ USER_UID="1000" # It must match your current user UID
 ENV="development"
 PORT="8080"
 REL="1"
+DB_NAME=alc-rimac
+DB_PASSWORD=qwerty$321
+SESSION_KEY=mysecretkey
 ```
 
 ### Live reload
@@ -32,8 +35,12 @@ $ bin/live.sh
 ### Docker compose .env file example
 
 ```shell
-WEBSERVER_HOSTNAME=domain.tld
-ENV=production
-PORT=8080
-REL=1
+ENV="production"
+PORT="8080"
+REL="1"
+DB_NAME=alc-rimac
+DB_PASSWORD=qwerty$321
+SESSION_KEY=mysecretkey
+WEBSERVER_HOSTNAME=www.domain.tld
 ```
+
