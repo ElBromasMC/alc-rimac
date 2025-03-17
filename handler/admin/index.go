@@ -63,6 +63,19 @@ func (h *Handler) HandleClientesInsertion(c echo.Context) error {
 	return util.Render(c, http.StatusOK, component.InfoMessage(fmt.Sprintf("Número de clientes: %d", len(clientes))))
 }
 
+func (h *Handler) HandleConstanciasDownload(c echo.Context) error {
+	// Write the csv
+	c.Response().Header().Set(echo.HeaderContentType, "text/csv")
+	c.Response().Header().Set(echo.HeaderContentDisposition, "attachment; filename=\"data.csv\"")
+
+	err := h.ConstanciaService.ExportConstanciasWithInventariosCSV(context.Background(), c.Response().Writer)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func parseEquiposFromCSV(src io.Reader) ([]constancia.Equipo, error) {
 	csvReader := csv.NewReader(src)
 	csvReader.FieldsPerRecord = 6

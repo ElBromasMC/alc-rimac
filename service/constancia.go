@@ -3,10 +3,15 @@ package service
 import (
 	"alc/model/constancia"
 	"context"
+	"database/sql"
+	"encoding/csv"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"io"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -198,6 +203,9 @@ func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constanc
 	descSmallText := "points:6, scale:1 abs, pos:bl, offset: %.2f %.2f, rot:0, mo:0, c: 0 0 0"
 	descX := "points:8, scale:1 abs, pos:bl, offset: %.2f %.2f, rot:0, mo:2, c: 0 0 0, strokecolor: 0 0 0"
 	addText := func(page, text string, x, y float64) error {
+		if text == "" {
+			return nil
+		}
 		err := api.AddTextWatermarksFile(
 			filename,
 			"",
@@ -210,6 +218,9 @@ func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constanc
 		return err
 	}
 	addSText := func(page, text string, x, y float64) error {
+		if text == "" {
+			return nil
+		}
 		err := api.AddTextWatermarksFile(
 			filename,
 			"",
@@ -286,11 +297,20 @@ func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constanc
 	startX := crdXTable + separationX
 
 	for _, item := range inventarios {
+		if item.Marca == "" &&
+			item.Modelo == "" &&
+			item.Serie == "" &&
+			item.Inventario == "" &&
+			item.Estado == "" {
+			continue
+		}
 		pos := float64(getPosition(item.TipoInventario))
 		err = addX("1", crdXTable, crdYTable-pos*spaceYTable)
 		err = addSText("1", item.Marca, startX, crdYTable-pos*spaceYTable)
 		err = addSText("1", item.Modelo, startX+spaceXTable, crdYTable-pos*spaceYTable)
-		err = addSText("1", item.Serie+" | "+item.Inventario, startX+2*spaceXTable, crdYTable-pos*spaceYTable)
+		if item.Serie != "" || item.Inventario != "" {
+			err = addSText("1", item.Serie+" | "+item.Inventario, startX+2*spaceXTable, crdYTable-pos*spaceYTable)
+		}
 		err = addSText("1", item.Estado, startX+3*spaceXTable, crdYTable-pos*spaceYTable)
 	}
 
@@ -298,4 +318,235 @@ func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constanc
 	err = addText("2", c.IssuedBy.Name, 105, 627)
 
 	return err
+}
+
+// ExportConstanciasWithInventariosCSV writes a CSV report with all constancias and their associated inventarios.
+func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w io.Writer) error {
+	query := `
+		SELECT 
+			c.id,
+            u.name AS issued_by,
+			c.nro_ticket,
+			c.tipo_procedimiento,
+			c.responsable_usuario,
+			c.codigo_empleado,
+			c.fecha_hora,
+			c.sede,
+			c.piso,
+			c.area,
+			c.tipo_equipo,
+			c.usuario_sap,
+			c.usuario_nombre,
+			c.created_at,
+			c.updated_at,
+			-- Inventario columns for PORTATIL
+			portatil.marca,
+			portatil.modelo,
+			portatil.serie,
+			portatil.estado,
+			portatil.inventario,
+			-- Inventario columns for MOUSE
+			mouse.marca,
+			mouse.modelo,
+			mouse.serie,
+			mouse.estado,
+			mouse.inventario,
+			-- Inventario columns for CARGADOR
+			cargador.marca,
+			cargador.modelo,
+			cargador.serie,
+			cargador.estado,
+			cargador.inventario,
+			-- Inventario columns for MOCHILA
+			mochila.marca,
+			mochila.modelo,
+			mochila.serie,
+			mochila.estado,
+			mochila.inventario,
+			-- Inventario columns for CADENA
+			cadena.marca,
+			cadena.modelo,
+			cadena.serie,
+			cadena.estado,
+			cadena.inventario
+		FROM constancias c
+        JOIN users u ON u.user_id = c.issued_by
+		LEFT JOIN inventario portatil ON portatil.constancia_id = c.id AND portatil.tipo_inventario = 'PORTATIL'
+		LEFT JOIN inventario mouse ON mouse.constancia_id = c.id AND mouse.tipo_inventario = 'MOUSE'
+		LEFT JOIN inventario cargador ON cargador.constancia_id = c.id AND cargador.tipo_inventario = 'CARGADOR'
+		LEFT JOIN inventario mochila ON mochila.constancia_id = c.id AND mochila.tipo_inventario = 'MOCHILA'
+		LEFT JOIN inventario cadena ON cadena.constancia_id = c.id AND cadena.tipo_inventario = 'CADENA'
+		ORDER BY c.id;
+	`
+
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	csvWriter := csv.NewWriter(w)
+
+	// Write CSV header row.
+	header := []string{
+		"id", "issued_by", "nro_ticket", "tipo_procedimiento", "responsable_usuario", "codigo_empleado",
+		"fecha_hora", "sede", "piso", "area", "tipo_equipo", "usuario_sap", "usuario_nombre",
+		"created_at", "updated_at",
+		// PORTATIL inventario fields:
+		"portatil_marca", "portatil_modelo", "portatil_serie", "portatil_estado", "portatil_inventario",
+		// MOUSE inventario fields:
+		"mouse_marca", "mouse_modelo", "mouse_serie", "mouse_estado", "mouse_inventario",
+		// CARGADOR inventario fields:
+		"cargador_marca", "cargador_modelo", "cargador_serie", "cargador_estado", "cargador_inventario",
+		// MOCHILA inventario fields:
+		"mochila_marca", "mochila_modelo", "mochila_serie", "mochila_estado", "mochila_inventario",
+		// CADENA inventario fields:
+		"cadena_marca", "cadena_modelo", "cadena_serie", "cadena_estado", "cadena_inventario",
+	}
+	if err := csvWriter.Write(header); err != nil {
+		return err
+	}
+
+	// Helper to convert sql.NullString to plain string.
+	nullToString := func(ns sql.NullString) string {
+		if ns.Valid {
+			return ns.String
+		}
+		return ""
+	}
+
+	for rows.Next() {
+		// Declare variables for constancia columns.
+		var (
+			id                 int64
+			issuedBy           string
+			nroTicket          string
+			tipoProcedimiento  string
+			responsableUsuario string
+			codigoEmpleado     string
+			fechaHora          time.Time
+			sede               string
+			piso               string
+			area               string
+			tipoEquipo         string
+			usuarioSAP         string
+			usuarioNombre      string
+			createdAt          time.Time
+			updatedAt          time.Time
+		)
+
+		// Inventario fields for each type (using sql.NullString to handle possible NULLs)
+		var (
+			// PORTATIL
+			portatilMarca, portatilModelo, portatilSerie, portatilEstado, portatilInventario sql.NullString
+			// MOUSE
+			mouseMarca, mouseModelo, mouseSerie, mouseEstado, mouseInventario sql.NullString
+			// CARGADOR
+			cargadorMarca, cargadorModelo, cargadorSerie, cargadorEstado, cargadorInventario sql.NullString
+			// MOCHILA
+			mochilaMarca, mochilaModelo, mochilaSerie, mochilaEstado, mochilaInventario sql.NullString
+			// CADENA
+			cadenaMarca, cadenaModelo, cadenaSerie, cadenaEstado, cadenaInventario sql.NullString
+		)
+
+		err := rows.Scan(
+			// Constancia columns.
+			&id,
+			&issuedBy,
+			&nroTicket,
+			&tipoProcedimiento,
+			&responsableUsuario,
+			&codigoEmpleado,
+			&fechaHora,
+			&sede,
+			&piso,
+			&area,
+			&tipoEquipo,
+			&usuarioSAP,
+			&usuarioNombre,
+			&createdAt,
+			&updatedAt,
+			// PORTATIL inventario columns.
+			&portatilMarca, &portatilModelo, &portatilSerie, &portatilEstado, &portatilInventario,
+			// MOUSE inventario columns.
+			&mouseMarca, &mouseModelo, &mouseSerie, &mouseEstado, &mouseInventario,
+			// CARGADOR inventario columns.
+			&cargadorMarca, &cargadorModelo, &cargadorSerie, &cargadorEstado, &cargadorInventario,
+			// MOCHILA inventario columns.
+			&mochilaMarca, &mochilaModelo, &mochilaSerie, &mochilaEstado, &mochilaInventario,
+			// CADENA inventario columns.
+			&cadenaMarca, &cadenaModelo, &cadenaSerie, &cadenaEstado, &cadenaInventario,
+		)
+		if err != nil {
+			return err
+		}
+
+		// Format time fields into strings (using RFC3339, adjust as needed).
+		loc, err := time.LoadLocation("America/Lima")
+		if err != nil {
+			return err
+		}
+
+		fechaHoraStr := fechaHora.In(loc).Format("2006-01-02")
+		createdAtStr := createdAt.In(loc).Format("2006-01-02")
+		updatedAtStr := updatedAt.In(loc).Format("2006-01-02")
+
+		idStr := strconv.FormatInt(id, 10)
+
+		// Build the CSV row.
+		row := []string{
+			idStr,
+			strings.ToUpper(issuedBy),
+			nroTicket,
+			tipoProcedimiento,
+			responsableUsuario,
+			codigoEmpleado,
+			fechaHoraStr,
+			sede,
+			piso,
+			area,
+			tipoEquipo,
+			usuarioSAP,
+			usuarioNombre,
+			createdAtStr,
+			updatedAtStr,
+			// PORTATIL inventario values.
+			nullToString(portatilMarca),
+			nullToString(portatilModelo),
+			nullToString(portatilSerie),
+			nullToString(portatilEstado),
+			nullToString(portatilInventario),
+			// MOUSE inventario values.
+			nullToString(mouseMarca),
+			nullToString(mouseModelo),
+			nullToString(mouseSerie),
+			nullToString(mouseEstado),
+			nullToString(mouseInventario),
+			// CARGADOR inventario values.
+			nullToString(cargadorMarca),
+			nullToString(cargadorModelo),
+			nullToString(cargadorSerie),
+			nullToString(cargadorEstado),
+			nullToString(cargadorInventario),
+			// MOCHILA inventario values.
+			nullToString(mochilaMarca),
+			nullToString(mochilaModelo),
+			nullToString(mochilaSerie),
+			nullToString(mochilaEstado),
+			nullToString(mochilaInventario),
+			// CADENA inventario values.
+			nullToString(cadenaMarca),
+			nullToString(cadenaModelo),
+			nullToString(cadenaSerie),
+			nullToString(cadenaEstado),
+			nullToString(cadenaInventario),
+		}
+
+		if err := csvWriter.Write(row); err != nil {
+			return err
+		}
+	}
+
+	csvWriter.Flush()
+	return csvWriter.Error()
 }

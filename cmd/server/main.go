@@ -67,8 +67,8 @@ func main() {
 	}
 
 	// Middleware
-	//e.Use(middleware.Logger())
-	//e.Use(middleware.Recover())
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 	e.Use(middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{
 		RedirectCode: http.StatusMovedPermanently,
 	}))
@@ -95,9 +95,7 @@ func main() {
 
 	// Auth routes
 	e.GET("/login", ph.HandleLoginShow)
-	e.GET("/signup", ph.HandleSignupShow)
 	e.POST("/login", ph.HandleLogin)
-	e.POST("/signup", ph.HandleSignup)
 	e.GET("/logout", ph.HandleLogout)
 
 	// Admin routes
@@ -106,6 +104,9 @@ func main() {
 	g1.GET("", ah.HandleIndexShow)
 	g1.POST("/equipos", ah.HandleEquiposInsertion)
 	g1.POST("/clientes", ah.HandleClientesInsertion)
+	g1.GET("/constancias", ah.HandleConstanciasDownload)
+	g1.GET("/signup", ph.HandleSignupShow)
+	g1.POST("/signup", ph.HandleSignup)
 
 	// Error handler
 	e.HTTPErrorHandler = util.HTTPErrorHandler

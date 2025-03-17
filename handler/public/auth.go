@@ -62,11 +62,11 @@ func (h *Handler) HandleSignup(c echo.Context) error {
 		return err
 	}
 
-	_, ok := c.Request().Header[http.CanonicalHeaderKey("HX-Request")]
-	if !ok {
-		return c.Redirect(http.StatusFound, "/login")
-	}
-	c.Response().Header().Set("HX-Redirect", "/login")
+	//_, ok := c.Request().Header[http.CanonicalHeaderKey("HX-Request")]
+	//if !ok {
+	//	return c.Redirect(http.StatusFound, "/login")
+	//}
+	//c.Response().Header().Set("HX-Redirect", "/login")
 	return c.NoContent(http.StatusOK)
 }
 
