@@ -42,7 +42,9 @@ templ Index() {
 				<form
 					class="block"
 					method="POST"
-					action="/constancia/insert"
+					action="/constancia"
+					hx-post="/constancia"
+					hx-target="#constancia-target"
 				>
 					<!-- Tecnico -->
 					<div>
@@ -108,7 +110,6 @@ templ Index() {
 								class="flex-1 border border-black"
 								type="text"
 								name="sap"
-								autocomplete="off"
 								required
 								placeholder="Buscar"
 								hx-get="/cliente"
@@ -131,7 +132,6 @@ templ Index() {
 									class="flex-1 border border-black"
 									type="text"
 									name={ fmt.Sprintf("%s-serie", "PORTATIL") }
-									autocomplete="off"
 									required
 									placeholder="Buscar"
 									hx-get="/equipo"
@@ -173,6 +173,7 @@ templ Index() {
 							</div>
 						}
 					</div>
+					<div id="constancia-target"></div>
 					<button class="flex-1 border border-black bg-gray-300 px-4 py-1 mt-3" type="submit">Descargar</button>
 				</form>
 			</section>

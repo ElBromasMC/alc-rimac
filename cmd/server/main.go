@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	_ "time/tzdata"
 
 	pgxuuid "github.com/jackc/pgx-gofrs-uuid"
 	"github.com/jackc/pgx/v5"
@@ -89,6 +90,7 @@ func main() {
 	e.GET("/", ch.HandleFormShow, authMiddleware, loggedMiddleware)
 	e.GET("/cliente", ch.HandleUsuarioFetch, authMiddleware, loggedMiddleware)
 	e.GET("/equipo", ch.HandleEquipoFetch, authMiddleware, loggedMiddleware)
+	e.POST("/constancia", ch.HandleConstanciaInsert, authMiddleware, loggedMiddleware)
 
 	// Auth routes
 	e.GET("/login", ph.HandleLoginShow)

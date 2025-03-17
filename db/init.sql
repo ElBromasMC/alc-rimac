@@ -48,6 +48,7 @@ CREATE TABLE clientes (
 
 CREATE TABLE constancias (
     id BIGSERIAL PRIMARY KEY,
+    issued_by UUID NOT NULL,
     nro_ticket VARCHAR(50) NOT NULL DEFAULT '',
     tipo_procedimiento tipo_procedimiento_enum NOT NULL,
     responsable_usuario VARCHAR(255) NOT NULL,
@@ -57,8 +58,11 @@ CREATE TABLE constancias (
     piso VARCHAR(50) NOT NULL,
     area VARCHAR(255) NOT NULL,
     tipo_equipo tipo_equipo_enum NOT NULL,
+    usuario_sap VARCHAR(100) NOT NULL,
+    usuario_nombre VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (issued_by) REFERENCES users(user_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE inventario (
@@ -68,6 +72,7 @@ CREATE TABLE inventario (
     modelo VARCHAR(100) NOT NULL,
     serie VARCHAR(100) NOT NULL,
     estado VARCHAR(100) NOT NULL,
+    inventario VARCHAR(100) NOT NULL,
     constancia_id BIGINT NOT NULL REFERENCES constancias(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
