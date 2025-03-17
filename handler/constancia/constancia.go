@@ -111,7 +111,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 	}
 	inventarios = append(inventarios, portatil)
 
-	types := []string{"MOUSE", "CARGADOR", "MOCHILA", "CADENA"}
+	types := []string{"MOUSE", "CABLERED", "CARGADOR", "MOCHILA", "CADENA"}
 	for _, t := range types {
 		tipoInventario, err := constancia.GetTipoInventario(t)
 		if err != nil {

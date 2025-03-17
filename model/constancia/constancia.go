@@ -29,6 +29,7 @@ const (
 	InventarioCargador TipoInventario = "CARGADOR"
 	InventarioMochila  TipoInventario = "MOCHILA"
 	InventarioCadena   TipoInventario = "CADENA"
+	InventarioCableRed TipoInventario = "CABLERED"
 )
 
 func GetTipoProcedimiento(s string) (TipoProcedimiento, error) {
@@ -60,6 +61,8 @@ func GetTipoInventario(s string) (TipoInventario, error) {
 		return InventarioMochila, nil
 	} else if s == "CADENA" {
 		return InventarioCadena, nil
+	} else if s == "CABLERED" {
+		return InventarioCableRed, nil
 	} else {
 		return "", errors.New("no se encontro el tipo de inventario")
 	}

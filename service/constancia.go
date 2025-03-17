@@ -276,6 +276,8 @@ func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constanc
 	getPosition := func(x constancia.TipoInventario) int {
 		if x == constancia.InventarioMouse {
 			return 3
+		} else if x == constancia.InventarioCableRed {
+			return 5
 		} else if x == constancia.InventarioPortatil {
 			return 6
 		} else if x == constancia.InventarioCargador {
