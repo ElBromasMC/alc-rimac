@@ -8,7 +8,7 @@ node_modules
 .env
 
 # PDF store
-pdf
+pdf/output-*.pdf
 
 # Build artifacts
 build
