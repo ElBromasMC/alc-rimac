@@ -102,6 +102,7 @@ type Constancia struct {
 	TipoEquipo         TipoEquipo
 	UsuarioSAP         string
 	UsuarioNombre      string
+	Serie              string
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 }
@@ -137,10 +138,11 @@ func (c Constancia) Normalize() (Constancia, error) {
 	c.Sede = strings.TrimSpace(strings.ToUpper(c.Sede))
 	c.Piso = strings.TrimSpace(strings.ToUpper(c.Piso))
 	c.Area = strings.TrimSpace(strings.ToUpper(c.Area))
-	c.UsuarioSAP = strings.TrimSpace(strings.ToUpper(c.UsuarioSAP))
+	c.UsuarioSAP = strings.TrimSpace(strings.ToLower(c.UsuarioSAP))
 	c.UsuarioNombre = strings.TrimSpace(strings.ToUpper(c.UsuarioNombre))
 	c.IssuedBy.Name = strings.TrimSpace(strings.ToUpper(c.IssuedBy.Name))
-	if len(c.UsuarioSAP) == 0 || len(c.UsuarioNombre) == 0 {
+	c.Serie = strings.TrimSpace(strings.ToUpper(c.Serie))
+	if len(c.UsuarioSAP) == 0 || len(c.UsuarioNombre) == 0 || len(c.Serie) == 0 {
 		return Constancia{}, errors.New("invalid constancia")
 	}
 	return c, nil

@@ -96,9 +96,9 @@ func (s Constancia) InsertConstanciaAndInventarios(ctx context.Context, c consta
 
 	queryConstancia := `
 		INSERT INTO constancias 
-			(issued_by, nro_ticket, tipo_procedimiento, responsable_usuario, codigo_empleado, fecha_hora, sede, piso, area, tipo_equipo, usuario_sap, usuario_nombre)
+			(issued_by, nro_ticket, tipo_procedimiento, responsable_usuario, codigo_empleado, fecha_hora, sede, piso, area, tipo_equipo, usuario_sap, usuario_nombre, serie)
 		VALUES 
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		RETURNING id
 	`
 	err = tx.QueryRow(ctx, queryConstancia,
@@ -114,6 +114,7 @@ func (s Constancia) InsertConstanciaAndInventarios(ctx context.Context, c consta
 		c.TipoEquipo,
 		c.UsuarioSAP,
 		c.UsuarioNombre,
+		c.Serie,
 	).Scan(&c.Id)
 	if err != nil {
 		return err
@@ -128,6 +129,105 @@ func (s Constancia) InsertConstanciaAndInventarios(ctx context.Context, c consta
 	`
 	for idx := range inventarios {
 		err = tx.QueryRow(ctx, queryInventario,
+			inventarios[idx].TipoInventario,
+			inventarios[idx].Marca,
+			inventarios[idx].Modelo,
+			inventarios[idx].Serie,
+			inventarios[idx].Estado,
+			inventarios[idx].Inventario,
+			c.Id,
+		).Scan(&inventarios[idx].Id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ConstanciaExists checks if a constancia with the given serie exists.
+func (s Constancia) ConstanciaExists(ctx context.Context, serie string) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM constancias WHERE serie = $1)`
+	if err := s.db.QueryRow(ctx, query, serie).Scan(&exists); err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+// UpdateConstanciaAndInventarios updates an existing constancia identified by its serie,
+// and recreates its associated inventario records.
+func (s Constancia) UpdateConstanciaAndInventarios(ctx context.Context, c constancia.Constancia, inventarios []constancia.Inventario) error {
+	// Start a transaction.
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// Ensure the transaction is either committed or rolled back.
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		} else {
+			err = tx.Commit(ctx)
+		}
+	}()
+
+	// Update the constancia record. Note that we use the unique 'serie' to identify the row.
+	updateConstanciaQuery := `
+		UPDATE constancias 
+		SET 
+			issued_by = $1,
+			nro_ticket = $2,
+			tipo_procedimiento = $3,
+			responsable_usuario = $4,
+			codigo_empleado = $5,
+			fecha_hora = $6,
+			sede = $7,
+			piso = $8,
+			area = $9,
+			tipo_equipo = $10,
+			usuario_sap = $11,
+			usuario_nombre = $12,
+			updated_at = NOW()
+		WHERE serie = $13
+		RETURNING id
+	`
+	err = tx.QueryRow(ctx, updateConstanciaQuery,
+		c.IssuedBy.Id,
+		c.NroTicket,
+		c.TipoProcedimiento,
+		c.ResponsableUsuario,
+		c.CodigoEmpleado,
+		c.FechaHora,
+		c.Sede,
+		c.Piso,
+		c.Area,
+		c.TipoEquipo,
+		c.UsuarioSAP,
+		c.UsuarioNombre,
+		c.Serie,
+	).Scan(&c.Id)
+	if err != nil {
+		return err
+	}
+
+	// Delete all existing inventario records for this constancia.
+	deleteInventarioQuery := `DELETE FROM inventario WHERE constancia_id = $1`
+	_, err = tx.Exec(ctx, deleteInventarioQuery, c.Id)
+	if err != nil {
+		return err
+	}
+
+	// Insert new inventario records.
+	insertInventarioQuery := `
+		INSERT INTO inventario 
+			(tipo_inventario, marca, modelo, serie, estado, inventario, constancia_id)
+		VALUES 
+			($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id
+	`
+	for idx := range inventarios {
+		err = tx.QueryRow(ctx, insertInventarioQuery,
 			inventarios[idx].TipoInventario,
 			inventarios[idx].Marca,
 			inventarios[idx].Modelo,
