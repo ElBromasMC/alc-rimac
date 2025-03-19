@@ -90,7 +90,7 @@ type Cliente struct {
 
 type Constancia struct {
 	Id                 int64
-	IssuedBy           auth.User
+	IssuedBy           auth.User `json:"-"`
 	NroTicket          string
 	TipoProcedimiento  TipoProcedimiento
 	ResponsableUsuario string

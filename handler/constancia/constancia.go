@@ -36,7 +36,17 @@ func (h *Handler) HandleEquipoFetch(c echo.Context) error {
 	if err != nil {
 		return util.Render(c, http.StatusOK, view.PortatilForm(constancia.Equipo{}, "Equipo no encontrado"))
 	}
-	return util.Render(c, http.StatusOK, view.PortatilForm(equipo, ""))
+	// Check if constancia already exists
+	exists, err := h.ConstanciaService.ConstanciaExists(context.Background(), equipo.Serie)
+	if err != nil {
+		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
+	}
+
+	msg := ""
+	if exists {
+		msg = "El equipo ya ha sido registrado."
+	}
+	return util.Render(c, http.StatusOK, view.PortatilForm(equipo, msg))
 }
 
 func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inventarios []constancia.Inventario) error {
@@ -199,7 +209,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 			return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 		}
 		// Send confirmation form
-		return util.Render(c, http.StatusOK, view.UpdateForm(cta.Serie, string(ctaJSON), string(inventariosJSON)))
+		return util.Render(c, http.StatusOK, view.UpdateForm(cta.UsuarioNombre, cta.Serie, string(ctaJSON), string(inventariosJSON)))
 	} else {
 		// Insert to database
 		err = h.ConstanciaService.InsertConstanciaAndInventarios(context.Background(), cta, inventarios)
@@ -212,6 +222,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 }
 
 func (h *Handler) HandleConstanciaUpdate(c echo.Context) error {
+	user, _ := auth.GetUser(c.Request().Context())
 	ctaStr := c.FormValue("cta")
 	inventariosStr := c.FormValue("inventarios")
 
@@ -219,6 +230,7 @@ func (h *Handler) HandleConstanciaUpdate(c echo.Context) error {
 	if err := json.Unmarshal([]byte(ctaStr), &cta); err != nil {
 		return c.String(http.StatusBadRequest, "Invalid constancia data")
 	}
+	cta.IssuedBy = user
 
 	var inventarios []constancia.Inventario
 	if err := json.Unmarshal([]byte(inventariosStr), &inventarios); err != nil {
