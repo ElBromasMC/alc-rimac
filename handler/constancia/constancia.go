@@ -139,7 +139,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 		NroTicket:          c.FormValue("nroTicket"),
 		TipoProcedimiento:  tipoProcedimiento,
 		ResponsableUsuario: c.FormValue("responsableUsuario"),
-		CodigoEmpleado:     c.FormValue("codigoEmpleado"),
+		CodigoEmpleado:     cliente.Usuario,
 		FechaHora:          fechaHora,
 		Sede:               c.FormValue("sede"),
 		Piso:               c.FormValue("piso"),
@@ -208,8 +208,15 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 		if err != nil {
 			return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 		}
+
+		// Query previous constancia
+		ctaOld, err := h.ConstanciaService.GetConstanciaBySerie(context.Background(), cta.Serie)
+		if err != nil {
+			return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
+		}
+
 		// Send confirmation form
-		return util.Render(c, http.StatusOK, view.UpdateForm(cta.UsuarioNombre, cta.Serie, string(ctaJSON), string(inventariosJSON)))
+		return util.Render(c, http.StatusOK, view.UpdateForm(ctaOld.UsuarioNombre, cta.Serie, string(ctaJSON), string(inventariosJSON)))
 	} else {
 		// Insert to database
 		err = h.ConstanciaService.InsertConstanciaAndInventarios(context.Background(), cta, inventarios)

@@ -77,6 +77,54 @@ func (s Constancia) GetClienteBySapId(ctx context.Context, sapId string) (consta
 	return cliente, nil
 }
 
+// GetConstanciaBySerie retrieves a constancia record based on its serie.
+func (s Constancia) GetConstanciaBySerie(ctx context.Context, serie string) (constancia.Constancia, error) {
+	query := `
+		SELECT 
+			id, 
+			issued_by, 
+			nro_ticket, 
+			tipo_procedimiento, 
+			responsable_usuario, 
+			codigo_empleado, 
+			fecha_hora, 
+			sede, 
+			piso, 
+			area, 
+			tipo_equipo, 
+			usuario_sap, 
+			usuario_nombre, 
+			serie, 
+			created_at, 
+			updated_at
+		FROM constancias
+		WHERE serie = $1
+	`
+	var c constancia.Constancia
+	err := s.db.QueryRow(ctx, query, serie).Scan(
+		&c.Id,
+		&c.IssuedBy.Id, // assuming that IssuedBy is an auth.User with an Id field
+		&c.NroTicket,
+		&c.TipoProcedimiento,
+		&c.ResponsableUsuario,
+		&c.CodigoEmpleado,
+		&c.FechaHora,
+		&c.Sede,
+		&c.Piso,
+		&c.Area,
+		&c.TipoEquipo,
+		&c.UsuarioSAP,
+		&c.UsuarioNombre,
+		&c.Serie,
+		&c.CreatedAt,
+		&c.UpdatedAt,
+	)
+	if err != nil {
+		return constancia.Constancia{}, err
+	}
+	return c, nil
+}
+
 // InsertConstanciaAndInventarios inserts a Constancia record along with its associated Inventario records.
 // All inserts are performed within a transaction so that they either all succeed or all fail.
 func (s Constancia) InsertConstanciaAndInventarios(ctx context.Context, c constancia.Constancia, inventarios []constancia.Inventario) error {

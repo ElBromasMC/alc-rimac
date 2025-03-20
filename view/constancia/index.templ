@@ -119,10 +119,6 @@ templ Index() {
 							<input class="flex-1 border border-black" type="text" id="responsableUsuario" name="responsableUsuario" required/>
 						</div>
 						<div class="flex gap-6">
-							<label for="codigoEmpleado">Codigo Empleado / Usuario Asignado</label>
-							<input class="flex-1 border border-black" type="text" id="codigoEmpleado" name="codigoEmpleado" required/>
-						</div>
-						<div class="flex gap-6">
 							<label for="fechaHora">Fecha y Hora</label>
 							<input class="flex-1 border border-black" type="datetime-local" id="fechaHora" name="fechaHora" required/>
 						</div>
@@ -142,7 +138,7 @@ templ Index() {
 							<label for="tipoEquipo">Tipo Equipo</label>
 							<select class="flex-1 border border-black" id="tipoEquipo" name="tipoEquipo" required>
 								<option value="PC">PC</option>
-								<option value="LAPTOP">LAPTOP</option>
+								<option value="LAPTOP" selected>LAPTOP</option>
 							</select>
 						</div>
 					</div>
@@ -186,22 +182,68 @@ templ Index() {
 							</div>
 							<div class="flex gap-6">
 								<label>Estado</label>
-								<input class="flex-1 border border-black" type="text" name={ fmt.Sprintf("%s-estado", "PORTATIL") } required/>
+								<input class="flex-1 border border-black" type="text" value="NUEVO" name={ fmt.Sprintf("%s-estado", "PORTATIL") } required/>
 							</div>
 							<div id="portatil-form" class="space-y-1">
 								@PortatilForm(constancia.Equipo{}, "")
 							</div>
 						</div>
-						for _, t := range []string{"MOUSE", "CABLERED","CARGADOR", "MOCHILA", "CADENA"} {
+						for _, t := range []string{"MOUSE", "CABLERED", "CARGADOR", "MOCHILA", "CADENA"} {
 							<div class="border border-black p-4 space-y-1">
 								<div class="font-bold capitalize">{ strings.ToLower(t) }</div>
 								<div class="flex gap-6">
 									<label>Marca</label>
-									<input class="flex-1 border border-black" type="text" name={ fmt.Sprintf("%s-marca", t) }/>
+									<input
+										class="flex-1 border border-black"
+										type="text"
+										if t == "MOUSE" {
+											value="LOGITECH"
+										}
+										else
+										if t == "CABLERED" {
+											value="COMMSCOPE"
+										}
+										else
+										if t == "CARGADOR" {
+											value="LENOVO"
+										}
+										else
+										if t == "MOCHILA" {
+											value="LENOVO"
+										}
+										else
+										if t == "CADENA" {
+											value="TARGUS"
+										}
+										name={ fmt.Sprintf("%s-marca", t) }
+									/>
 								</div>
 								<div class="flex gap-6">
 									<label>Modelo</label>
-									<input class="flex-1 border border-black" type="text" name={ fmt.Sprintf("%s-modelo", t) }/>
+									<input
+										class="flex-1 border border-black"
+										type="text"
+										if t == "MOUSE" {
+											value="M170"
+										}
+										else
+										if t == "CABLERED" {
+											value=""
+										}
+										else
+										if t == "CARGADOR" {
+											value=""
+										}
+										else
+										if t == "MOCHILA" {
+											value="B210 BLACK"
+										}
+										else
+										if t == "CADENA" {
+											value=""
+										}
+										name={ fmt.Sprintf("%s-modelo", t) }
+									/>
 								</div>
 								<div class="flex gap-6">
 									<label>Serie</label>
@@ -213,7 +255,12 @@ templ Index() {
 								</div>
 								<div class="flex gap-6">
 									<label>Estado</label>
-									<input class="flex-1 border border-black" type="text" name={ fmt.Sprintf("%s-estado", t) }/>
+									<input
+										class="flex-1 border border-black"
+										type="text"
+										value="NUEVO"
+										name={ fmt.Sprintf("%s-estado", t) }
+									/>
 								</div>
 							</div>
 						}
