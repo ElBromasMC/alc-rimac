@@ -87,11 +87,16 @@ func main() {
 	static(e)
 
 	// Page routes
-	e.GET("/", ch.HandleFormShow, authMiddleware, loggedMiddleware)
+	e.GET("/", ch.HandleIndexShow, authMiddleware, loggedMiddleware)
+	e.GET("/accesorios", ch.HandleAccesoriosFormShow, authMiddleware, loggedMiddleware)
+	e.GET("/devolucion", ch.HandleDevolucionFormShow, authMiddleware, loggedMiddleware)
+
 	e.GET("/cliente", ch.HandleUsuarioFetch, authMiddleware, loggedMiddleware)
 	e.GET("/equipo", ch.HandleEquipoFetch, authMiddleware, loggedMiddleware)
+
 	e.POST("/constancia", ch.HandleConstanciaInsert, authMiddleware, loggedMiddleware)
 	e.PUT("/constancia", ch.HandleConstanciaUpdate, authMiddleware, loggedMiddleware)
+
 	e.GET("/download", ch.DownloadPDFHandler, authMiddleware, loggedMiddleware)
 
 	// Auth routes

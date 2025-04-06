@@ -143,3 +143,12 @@ ALTER TABLE constancias
 ALTER COLUMN serie SET NOT NULL,
 ADD CONSTRAINT unique_serie UNIQUE (serie);
 
+--
+-- Sync 3
+--
+
+ALTER TYPE tipo_inventario_enum ADD VALUE 'PORTATILOLD';
+ALTER TYPE tipo_inventario_enum ADD VALUE 'CARGADOROLD';
+
+ALTER TABLE constancias ADD COLUMN observacion TEXT NOT NULL DEFAULT '';
+

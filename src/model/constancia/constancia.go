@@ -24,13 +24,32 @@ const (
 type TipoInventario string
 
 const (
-	InventarioMouse    TipoInventario = "MOUSE"
-	InventarioPortatil TipoInventario = "PORTATIL"
-	InventarioCargador TipoInventario = "CARGADOR"
-	InventarioMochila  TipoInventario = "MOCHILA"
-	InventarioCadena   TipoInventario = "CADENA"
-	InventarioCableRed TipoInventario = "CABLERED"
+	InventarioMouse       TipoInventario = "MOUSE"
+	InventarioPortatil    TipoInventario = "PORTATIL"
+	InventarioCargador    TipoInventario = "CARGADOR"
+	InventarioMochila     TipoInventario = "MOCHILA"
+	InventarioCadena      TipoInventario = "CADENA"
+	InventarioCableRed    TipoInventario = "CABLERED"
+	InventarioPortatilOld TipoInventario = "PORTATILOLD"
+	InventarioCargadorOld TipoInventario = "CARGADOROLD"
 )
+
+type TipoFormulario string
+
+const (
+	FormularioAccesorios TipoFormulario = "ACCESORIOS"
+	FormularioDevolucion TipoFormulario = "DEVOLUCION"
+)
+
+func GetTipoFormulario(s string) (TipoFormulario, error) {
+	if s == "ACCESORIOS" {
+		return FormularioAccesorios, nil
+	} else if s == "DEVOLUCION" {
+		return FormularioDevolucion, nil
+	} else {
+		return "", errors.New("no se encontro el tipo de formulario")
+	}
+}
 
 func GetTipoProcedimiento(s string) (TipoProcedimiento, error) {
 	if s == "ASIGNACION" {
@@ -63,6 +82,10 @@ func GetTipoInventario(s string) (TipoInventario, error) {
 		return InventarioCadena, nil
 	} else if s == "CABLERED" {
 		return InventarioCableRed, nil
+	} else if s == "PORTATILOLD" {
+		return InventarioPortatilOld, nil
+	} else if s == "CARGADOROLD" {
+		return InventarioCargadorOld, nil
 	} else {
 		return "", errors.New("no se encontro el tipo de inventario")
 	}
@@ -103,6 +126,7 @@ type Constancia struct {
 	UsuarioSAP         string
 	UsuarioNombre      string
 	Serie              string
+	Observacion        string
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 }

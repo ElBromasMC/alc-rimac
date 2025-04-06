@@ -144,9 +144,9 @@ func (s Constancia) InsertConstanciaAndInventarios(ctx context.Context, c consta
 
 	queryConstancia := `
 		INSERT INTO constancias 
-			(issued_by, nro_ticket, tipo_procedimiento, responsable_usuario, codigo_empleado, fecha_hora, sede, piso, area, tipo_equipo, usuario_sap, usuario_nombre, serie)
+			(issued_by, nro_ticket, tipo_procedimiento, responsable_usuario, codigo_empleado, fecha_hora, sede, piso, area, tipo_equipo, usuario_sap, usuario_nombre, serie, observacion)
 		VALUES 
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id
 	`
 	err = tx.QueryRow(ctx, queryConstancia,
@@ -163,6 +163,7 @@ func (s Constancia) InsertConstanciaAndInventarios(ctx context.Context, c consta
 		c.UsuarioSAP,
 		c.UsuarioNombre,
 		c.Serie,
+		c.Observacion,
 	).Scan(&c.Id)
 	if err != nil {
 		return err
@@ -236,8 +237,9 @@ func (s Constancia) UpdateConstanciaAndInventarios(ctx context.Context, c consta
 			tipo_equipo = $10,
 			usuario_sap = $11,
 			usuario_nombre = $12,
+            observacion = $13,
 			updated_at = NOW()
-		WHERE serie = $13
+		WHERE serie = $14
 		RETURNING id
 	`
 	err = tx.QueryRow(ctx, updateConstanciaQuery,
@@ -253,6 +255,7 @@ func (s Constancia) UpdateConstanciaAndInventarios(ctx context.Context, c consta
 		c.TipoEquipo,
 		c.UsuarioSAP,
 		c.UsuarioNombre,
+		c.Observacion,
 		c.Serie,
 	).Scan(&c.Id)
 	if err != nil {
@@ -414,6 +417,10 @@ func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constanc
 	err = addText("1", c.Sede, 232, crdY-5*spaceY)
 	err = addText("1", c.Piso, 232, crdY-6*spaceY)
 	err = addText("1", c.Area, 232, crdY-7*spaceY)
+
+	if c.Observacion != "" {
+		err = addText("1", "Observaciones: "+c.Observacion, 58, 100)
+	}
 
 	if c.TipoEquipo == constancia.EquipoPC {
 		err = addX("1", 309, 498.5)

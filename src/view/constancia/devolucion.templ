@@ -1,0 +1,269 @@
+package constancia
+
+import (
+	"alc/model/auth"
+	"alc/model/constancia"
+	"alc/view/layout"
+	"fmt"
+	"strings"
+)
+
+templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
+	<div class="space-y-1 hidden">
+		<div>
+			<a
+				id="pdf1"
+				class="text-azure font-semibold"
+				href={ templ.SafeURL(fmt.Sprintf("data:application/pdf;base64,%s", pdf1Base64)) }
+				target="_blank"
+				download={ fmt.Sprintf("%s-ASIGNACION", name) }
+			>
+				Descargar Asignación
+			</a>
+		</div>
+		<div>
+			<a
+				id="pdf2"
+				class="text-azure font-semibold"
+				href={ templ.SafeURL(fmt.Sprintf("data:application/pdf;base64,%s", pdf2Base64)) }
+				target="_blank"
+				download={ fmt.Sprintf("%s-RECUPERACION", name) }
+			>
+				Descargar Recuperación
+			</a>
+		</div>
+	</div>
+	<script>
+        // Simulate a click on each anchor element to trigger the download
+        var link1 = document.getElementById("pdf1");
+        var link2 = document.getElementById("pdf2");
+
+        if (link1) link1.click();
+        if (link2) link2.click();
+    </script>
+}
+
+templ Devolucion() {
+	@layout.BasePage("Formulario de asignación y devolución") {
+		<div>
+			<!-- Update item dialog -->
+			<dialog
+				class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 p-6 w-[90%] max-w-lg border border-black bg-white"
+				hx-on::after-swap="this.showModal();"
+				hx-on::after-request="this.close();"
+			>
+				<form class="flex justify-between" method="dialog">
+					<h2 class="font-bold text-2xl">Desea actualizar los datos?</h2>
+					<button class="font-bold text-azure" type="submit">Salir</button>
+				</form>
+				<div id="update-item-form"></div>
+			</dialog>
+		</div>
+		<main>
+			<div class="flex justify-center">
+				<img src="/static/img/lenovo.svg"/>
+			</div>
+			<section>
+				<form
+					class="block"
+					method="POST"
+					action="/constancia"
+					hx-post="/constancia"
+					hx-target="#update-item-form"
+					hx-disabled-elt="find button[type='submit']"
+					hx-indicator="#submit-indicator"
+				>
+					<input type="hidden" name="formulario" value="DEVOLUCION"/>
+					<!-- Tecnico -->
+					<div>
+						if user, ok := auth.GetUser(ctx); ok {
+							<div>
+								<span class="font-bold">Nombre del Técnico:</span>
+								<span>{ user.Name }</span>
+							</div>
+						}
+					</div>
+					<!-- Informacion general -->
+					<div class="font-bold mt-6">Información general</div>
+					<div class="border border-black p-4 space-y-1">
+						<div class="flex gap-6">
+							<label for="nroTicket">Nro Ticket</label>
+							<input class="flex-1 border border-black" type="text" id="nroTicket" name="nroTicket"/>
+						</div>
+						<div class="flex gap-6">
+							<label for="responsableUsuario">Responsable del Área</label>
+							<input class="flex-1 border border-black" type="text" id="responsableUsuario" name="responsableUsuario" required/>
+						</div>
+						<div class="flex gap-6">
+							<label for="fechaHora">Fecha y Hora</label>
+							<input class="flex-1 border border-black" type="datetime-local" id="fechaHora" name="fechaHora" required/>
+						</div>
+						<div class="flex gap-6">
+							<label for="sede">Sede</label>
+							<input class="flex-1 border border-black" type="text" id="sede" name="sede" required/>
+						</div>
+						<div class="flex gap-6">
+							<label for="piso">Piso</label>
+							<input class="flex-1 border border-black" type="text" id="piso" name="piso" required/>
+						</div>
+						<div class="flex gap-6">
+							<label for="area">Area</label>
+							<input class="flex-1 border border-black" type="text" id="area" name="area" required/>
+						</div>
+						<div class="flex gap-6">
+							<label for="tipoEquipo">Tipo Equipo</label>
+							<select class="flex-1 border border-black" id="tipoEquipo" name="tipoEquipo" required>
+								<option value="PC">PC</option>
+								<option value="LAPTOP" selected>LAPTOP</option>
+							</select>
+						</div>
+					</div>
+					<!-- Usuario -->
+					<div class="font-bold mt-6">Usuario</div>
+					<div class="border border-black p-4 space-y-1">
+						<div class="flex gap-6">
+							<label>SAP</label>
+							<input
+								class="flex-1 border border-black"
+								type="text"
+								name="sap"
+								required
+								placeholder="Buscar"
+								hx-get="/cliente"
+								hx-trigger="input changed delay:500ms"
+								hx-target="#usuario-form"
+							/>
+						</div>
+						<div id="usuario-form">
+							@UsuarioForm(constancia.Cliente{}, "")
+						</div>
+					</div>
+					<!-- Inventario -->
+					<div class="font-bold mt-6">Inventario</div>
+					<div class="space-y-3">
+						<div class="border border-black p-4 space-y-1">
+							<div class="font-bold">Portatil</div>
+							<div class="flex gap-6">
+								<label>Serie</label>
+								<input
+									class="flex-1 border border-black"
+									type="text"
+									name={ fmt.Sprintf("%s-serie", "PORTATIL") }
+									required
+									placeholder="Buscar"
+									hx-get="/equipo"
+									hx-trigger="input changed delay:500ms"
+									hx-target="#portatil-form"
+								/>
+							</div>
+							<div class="flex gap-6">
+								<label>Estado</label>
+								<input class="flex-1 border border-black" type="text" value="NUEVO" name={ fmt.Sprintf("%s-estado", "PORTATIL") } required/>
+							</div>
+							<div id="portatil-form" class="space-y-1">
+								@PortatilForm(constancia.Equipo{}, "")
+							</div>
+						</div>
+						for _, t := range []string{"CARGADOR", "PORTATILOLD", "CARGADOROLD"} {
+							<div class="border border-black p-4 space-y-1">
+								<div class="font-bold capitalize">
+									if t == "PORTATILOLD" {
+										Portatil antiguo
+									} else if t == "CARGADOROLD" {
+										Cargador antiguo
+									} else {
+										{ strings.ToLower(t) }
+									}
+								</div>
+								<div class="flex gap-6">
+									<label>Marca</label>
+									if t == "CARGADOR" {
+										<input
+											class="flex-1 border border-black"
+											type="text"
+											value="LENOVO"
+											name={ fmt.Sprintf("%s-marca", t) }
+											required
+										/>
+									} else if t == "PORTATILOLD" {
+										<select
+											class="flex-1 border border-black"
+											name={ fmt.Sprintf("%s-marca", t) }
+											required
+										>
+											<option value="DELL" selected>DELL</option>
+											<option value="LENOVO">LENOVO</option>
+											<option value="HP">HP</option>
+										</select>
+									} else if t == "CARGADOROLD" {
+										<select
+											class="flex-1 border border-black"
+											name={ fmt.Sprintf("%s-marca", t) }
+											required
+										>
+											<option value="DELL" selected>DELL</option>
+											<option value="LENOVO">LENOVO</option>
+											<option value="HP">HP</option>
+										</select>
+									} else {
+										<input
+											class="flex-1 border border-black"
+											type="text"
+											name={ fmt.Sprintf("%s-marca", t) }
+											required
+										/>
+									}
+								</div>
+								<div class="flex gap-6">
+									<label>Modelo</label>
+									<input
+										class="flex-1 border border-black"
+										type="text"
+										name={ fmt.Sprintf("%s-modelo", t) }
+									/>
+								</div>
+								<div class="flex gap-6">
+									<label>Serie</label>
+									<input class="flex-1 border border-black" type="text" name={ fmt.Sprintf("%s-serie", t) }/>
+								</div>
+								<div class="flex gap-6">
+									<label>Inventario RIMAC</label>
+									<input class="flex-1 border border-black" type="text" name={ fmt.Sprintf("%s-inventario", t) }/>
+								</div>
+								<div class="flex gap-6">
+									<label>Estado</label>
+									<input
+										class="flex-1 border border-black"
+										type="text"
+										if t != "PORTATILOLD" && t != "CARGADOROLD" {
+											value="NUEVO"
+										} else {
+											value="ANTIGUO"
+										}
+										name={ fmt.Sprintf("%s-estado", t) }
+									/>
+								</div>
+							</div>
+						}
+					</div>
+					<div class="font-bold mt-6">Observaciones</div>
+					<div class="border border-black p-4 space-y-1">
+						<div class="flex gap-6">
+							<label>Observaciones</label>
+							<textarea
+								class="flex-1 border border-black resize-none"
+								name="observacion"
+								rows="3"
+							></textarea>
+						</div>
+					</div>
+					<div class="flex gap-3">
+						<button class="flex-0 border border-black bg-gray-300 px-4 py-1 mt-3 disabled:bg-gray-600 disabled:text-white" type="submit">Guardar e Imprimir</button>
+						<img id="submit-indicator" class="flex-0 htmx-indicator w-9" src="/static/img/bars.svg"/>
+					</div>
+					<div id="constancia-target"></div>
+				</form>
+			</section>
+		</main>
+	}
+}

@@ -10,11 +10,5 @@ cd ${PROJECT_ROOT}
 
 ${COMPOSE_PROVIDER} \
     -f ${PROJECT_ROOT}/docker/docker-compose.base.yml \
-    -f ${PROJECT_ROOT}/docker/docker-compose.dev.yml \
-    up --detach db
-
-exec ${COMPOSE_PROVIDER} \
-    -f ${PROJECT_ROOT}/docker/docker-compose.base.yml \
-    -f ${PROJECT_ROOT}/docker/docker-compose.dev.yml \
-    run --rm --build --service-ports webserver
+    exec db sh
 

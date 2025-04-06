@@ -7,6 +7,7 @@ import (
 	"alc/view/component"
 	view "alc/view/constancia"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -49,61 +50,178 @@ func (h *Handler) HandleEquipoFetch(c echo.Context) error {
 	return util.Render(c, http.StatusOK, view.PortatilForm(equipo, msg))
 }
 
-func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inventarios []constancia.Inventario) error {
-	// Generate PDF
-	// Step 1: Create a temporary file to get a unique filename.
-	tempFile, err := os.CreateTemp("./pdf", "output-*.pdf")
-	if err != nil {
-		return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create temp file"))
-	}
-	tempFilename := tempFile.Name()
-	tempFile.Close() // Close immediately since we'll write our own copy
+func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inventarios []constancia.Inventario, formulario constancia.TipoFormulario) error {
+	if formulario == constancia.FormularioAccesorios {
+		// Generate PDF
+		// Step 1: Create a temporary file to get a unique filename.
+		tempFile, err := os.CreateTemp("./pdf", "output-*.pdf")
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create temp file"))
+		}
+		tempFilename := tempFile.Name()
+		tempFile.Close() // Close immediately since we'll write our own copy
 
-	// Step 2: Open the base PDF file.
-	srcFile, err := os.Open("./pdf/constancia.pdf")
-	if err != nil {
-		return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to open base PDF"))
-	}
-	defer srcFile.Close()
+		// Step 2: Open the base PDF file.
+		srcFile, err := os.Open("./pdf/constancia.pdf")
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to open base PDF"))
+		}
+		defer srcFile.Close()
 
-	// Step 3: Create (or overwrite) the temporary file and copy the base PDF into it.
-	dstFile, err := os.Create(tempFilename)
-	if err != nil {
-		return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create destination file"))
-	}
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
+		// Step 3: Create (or overwrite) the temporary file and copy the base PDF into it.
+		dstFile, err := os.Create(tempFilename)
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create destination file"))
+		}
+		_, err = io.Copy(dstFile, srcFile)
+		if err != nil {
+			dstFile.Close()
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to copy PDF"))
+		}
 		dstFile.Close()
-		return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to copy PDF"))
+
+		// Step 4: Modify the PDF in place using your GeneratePDF function.
+		err = h.ConstanciaService.GeneratePDF(context.Background(), tempFilename, cta, inventarios)
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage(err.Error()))
+		}
+
+		// Build the URL for the download endpoint.
+		// We send only the file base name as a parameter.
+		downloadURL := fmt.Sprintf("/download?formulario=%s&file=%s&serie=%s&usuario=%s",
+			url.QueryEscape(string(formulario)),
+			url.QueryEscape(filepath.Base(tempFilename)),
+			url.QueryEscape(cta.Serie),
+			url.QueryEscape(cta.UsuarioNombre),
+		)
+		// Instead of returning the file directly, set the HX-Redirect header.
+		(*c).Response().Header().Set("HX-Redirect", downloadURL)
+
+		return util.Render(*c, http.StatusOK, component.InfoMessage("Cargado exitosamente"))
+	} else if formulario == constancia.FormularioDevolucion {
+		// Generate PDFs
+		tempFile1, err := os.CreateTemp("./pdf", "output-*.pdf")
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create temp file"))
+		}
+		tempFilename1 := tempFile1.Name()
+		tempFile1.Close() // Close immediately since we'll write our own copy
+
+		tempFile2, err := os.CreateTemp("./pdf", "output-*.pdf")
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create temp file"))
+		}
+		tempFilename2 := tempFile2.Name()
+		tempFile2.Close() // Close immediately since we'll write our own copy
+
+		// Open the base PDF file.
+		srcFile, err := os.Open("./pdf/constancia.pdf")
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to open base PDF"))
+		}
+		defer srcFile.Close()
+
+		// Create (or overwrite) the temporary file and copy the base PDF into it.
+		dstFile1, err := os.Create(tempFilename1)
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create destination file"))
+		}
+		_, err = io.Copy(dstFile1, srcFile)
+		if err != nil {
+			dstFile1.Close()
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to copy PDF"))
+		}
+		dstFile1.Close()
+
+		// Reset srcFile pointer to the beginning.
+		_, err = srcFile.Seek(0, 0)
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to reset file pointer"))
+		}
+
+		dstFile2, err := os.Create(tempFilename2)
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create destination file"))
+		}
+		_, err = io.Copy(dstFile2, srcFile)
+		if err != nil {
+			dstFile2.Close()
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to copy PDF"))
+		}
+		dstFile2.Close()
+
+		// Step 4: Modify the PDF in place using your GeneratePDF function.
+		// Asignacion (Equipo nuevo)
+		cta1 := cta
+		cta1.TipoProcedimiento = constancia.ProcedimientoAsignacion
+		cta1.Observacion = ""
+		var inventarios1 []constancia.Inventario
+		for _, i := range inventarios {
+			if i.TipoInventario == constancia.InventarioPortatil {
+				in := i
+				inventarios1 = append(inventarios1, in)
+			} else if i.TipoInventario == constancia.InventarioCargador {
+				in := i
+				inventarios1 = append(inventarios1, in)
+			}
+		}
+		err = h.ConstanciaService.GeneratePDF(context.Background(), tempFilename1, cta1, inventarios1)
+		defer os.Remove(tempFilename1)
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage(err.Error()))
+		}
+
+		// Recuperacion (Equipo antiguo)
+		cta2 := cta
+		cta2.TipoProcedimiento = constancia.ProcedimientoRecuperacion
+		var inventarios2 []constancia.Inventario
+		for _, i := range inventarios {
+			if i.TipoInventario == constancia.InventarioPortatilOld {
+				in := i
+				in.TipoInventario = constancia.InventarioPortatil
+				inventarios2 = append(inventarios2, in)
+			} else if i.TipoInventario == constancia.InventarioCargadorOld {
+				in := i
+				in.TipoInventario = constancia.InventarioCargador
+				inventarios2 = append(inventarios2, in)
+			}
+		}
+		err = h.ConstanciaService.GeneratePDF(context.Background(), tempFilename2, cta2, inventarios2)
+		defer os.Remove(tempFilename2)
+		if err != nil {
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage(err.Error()))
+		}
+		// Read the first PDF file.
+		pdf1Bytes, err := os.ReadFile(tempFilename1)
+		if err != nil {
+			return (*c).String(http.StatusInternalServerError, "Error reading PDF 1")
+		}
+		// Encode to base64.
+		pdf1Base64 := base64.StdEncoding.EncodeToString(pdf1Bytes)
+
+		// Read the second PDF file.
+		pdf2Bytes, err := os.ReadFile(tempFilename2)
+		if err != nil {
+			return (*c).String(http.StatusInternalServerError, "Error reading PDF 2")
+		}
+		// Encode to base64.
+		pdf2Base64 := base64.StdEncoding.EncodeToString(pdf2Bytes)
+
+		(*c).Response().Header().Set("HX-Retarget", "#constancia-target")
+		return util.Render(*c, http.StatusOK, view.DevolucionDocuments(pdf1Base64, pdf2Base64, fmt.Sprintf("%s-%s", cta.Serie, cta.UsuarioNombre)))
+	} else {
+		return util.Render(*c, http.StatusOK, component.ErrorMessage("Tipo de formulario inválido"))
 	}
-	dstFile.Close()
-
-	// Step 4: Modify the PDF in place using your GeneratePDF function.
-	err = h.ConstanciaService.GeneratePDF(context.Background(), tempFilename, cta, inventarios)
-	if err != nil {
-		return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage(err.Error()))
-	}
-
-	// Build the URL for the download endpoint.
-	// We send only the file base name as a parameter.
-	downloadURL := fmt.Sprintf("/download?file=%s&serie=%s&usuario=%s",
-		url.QueryEscape(filepath.Base(tempFilename)),
-		url.QueryEscape(cta.Serie),
-		url.QueryEscape(cta.UsuarioNombre),
-	)
-	// Instead of returning the file directly, set the HX-Redirect header.
-	(*c).Response().Header().Set("HX-Redirect", downloadURL)
-
-	return util.Render(*c, http.StatusOK, component.InfoMessage("Cargado exitosamente"))
 }
 
 func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 	// Parse request
 	user, _ := auth.GetUser(c.Request().Context())
-	tipoProcedimiento, err := constancia.GetTipoProcedimiento(c.FormValue("tipoProcedimiento"))
+	formulario, err := constancia.GetTipoFormulario(c.FormValue("formulario"))
 	if err != nil {
 		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 	}
+	tipoProcedimiento := constancia.ProcedimientoAsignacion
 
 	tipoEquipo, err := constancia.GetTipoEquipo(c.FormValue("tipoEquipo"))
 	if err != nil {
@@ -149,6 +267,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 		UsuarioSAP:         cliente.SapId,
 		UsuarioNombre:      cliente.Usuario,
 		Serie:              c.FormValue("PORTATIL-serie"),
+		Observacion:        c.FormValue("observacion"),
 	}
 	cta, err = cta.Normalize()
 	if err != nil {
@@ -171,7 +290,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 	}
 	inventarios = append(inventarios, portatil)
 
-	types := []string{"MOUSE", "CABLERED", "CARGADOR", "MOCHILA", "CADENA"}
+	types := []string{"MOUSE", "CABLERED", "CARGADOR", "MOCHILA", "CADENA", "PORTATILOLD", "CARGADOROLD"}
 	for _, t := range types {
 		tipoInventario, err := constancia.GetTipoInventario(t)
 		if err != nil {
@@ -216,7 +335,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 		}
 
 		// Send confirmation form
-		return util.Render(c, http.StatusOK, view.UpdateForm(ctaOld.UsuarioNombre, cta.Serie, string(ctaJSON), string(inventariosJSON)))
+		return util.Render(c, http.StatusOK, view.UpdateForm(ctaOld.UsuarioNombre, cta.Serie, string(ctaJSON), string(inventariosJSON), formulario))
 	} else {
 		// Insert to database
 		err = h.ConstanciaService.InsertConstanciaAndInventarios(context.Background(), cta, inventarios)
@@ -224,12 +343,16 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 			return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 		}
 
-		return generateSendPDF(h, &c, cta, inventarios)
+		return generateSendPDF(h, &c, cta, inventarios, formulario)
 	}
 }
 
 func (h *Handler) HandleConstanciaUpdate(c echo.Context) error {
 	user, _ := auth.GetUser(c.Request().Context())
+	formulario, err := constancia.GetTipoFormulario(c.FormValue("formulario"))
+	if err != nil {
+		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
+	}
 	ctaStr := c.FormValue("cta")
 	inventariosStr := c.FormValue("inventarios")
 
@@ -244,7 +367,7 @@ func (h *Handler) HandleConstanciaUpdate(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid inventario data")
 	}
 
-	cta, err := cta.Normalize()
+	cta, err = cta.Normalize()
 	if err != nil {
 		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 	}
@@ -263,27 +386,36 @@ func (h *Handler) HandleConstanciaUpdate(c echo.Context) error {
 		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 	}
 
-	return generateSendPDF(h, &c, cta, inventarios)
+	return generateSendPDF(h, &c, cta, inventarios, formulario)
 }
 
 // GET handler that serves the PDF file.
 func (h *Handler) DownloadPDFHandler(c echo.Context) error {
 	// Get the file name from the query string.
-	fileName := c.QueryParam("file")
+	formulario, err := constancia.GetTipoFormulario(c.FormValue("formulario"))
+	if err != nil {
+		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
+	}
 	serie := c.QueryParam("serie")
 	usuario := c.QueryParam("usuario")
-	if fileName == "" {
+
+	if formulario == constancia.FormularioAccesorios {
+		fileName := c.QueryParam("file")
+		if fileName == "" {
+			return c.NoContent(http.StatusBadRequest)
+		}
+
+		// Construct the full path to the file.
+		filePath := filepath.Join("./pdf", fileName)
+
+		// Clean up: remove the file after serving.
+		defer os.Remove(filePath)
+
+		// Serve the file to the user with a custom download name.
+		err = c.Attachment(filePath, fmt.Sprintf("%s-%s.pdf", serie, usuario))
+
+		return err
+	} else {
 		return c.NoContent(http.StatusBadRequest)
 	}
-
-	// Construct the full path to the file.
-	filePath := filepath.Join("./pdf", fileName)
-
-	// Clean up: remove the file after serving.
-	defer os.Remove(filePath)
-
-	// Serve the file to the user with a custom download name.
-	err := c.Attachment(filePath, fmt.Sprintf("%s-%s.pdf", serie, usuario))
-
-	return err
 }
