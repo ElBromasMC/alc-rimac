@@ -15,7 +15,7 @@ USER runner
 # Install run-time and compile-time local dependencies
 RUN go install github.com/a-h/templ/cmd/templ@latest
 
-# Create and change to source directory
+# Create required folders and change to source directory
 RUN mkdir /home/runner/src
 WORKDIR /home/runner/src
 
@@ -44,8 +44,9 @@ RUN addgroup -g 1000 runner \
     && adduser -G runner -u 1000 -D runner
 USER runner
 
-# Create and change to app directory
-RUN mkdir /home/runner/app
+# Create required folders and change to app directory
+RUN mkdir /home/runner/app \
+    /home/runner/app/pdf
 WORKDIR /home/runner/app
 
 # Deploy the application binary into a lean image
