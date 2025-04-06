@@ -13,7 +13,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
       - type: bind
-        source: ../src/db/init.sql
+        source: ./src/db/init.sql
         target: /docker-entrypoint-initdb.d/init.sql
         read_only: true
     environment:

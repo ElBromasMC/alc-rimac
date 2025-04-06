@@ -3,18 +3,16 @@ services:
     userns_mode: "keep-id:uid=1000,gid=1000"
     restart: no
     build:
-      context: ../src
+      context: ./src
       dockerfile: ./Dockerfile
       target: development
     volumes:
       - type: bind
-        source: ../src
+        source: ./src
         target: /home/runner/src
     ports:
       - "8080:8080"
       - "8010:8010"
-  #db:
-    #restart: no
 
 x-podman:
   in_pod: false

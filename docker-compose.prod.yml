@@ -3,11 +3,11 @@ services:
     image: "elbromasmc/alc-rimac"
     restart: unless-stopped
     build:
-      context: ../src
+      context: ./src
       dockerfile: ./Dockerfile
       target: production
     volumes:
-      - ../pdf:/pdf
+      - ./pdf:/home/runner/app/pdf
   db:
     restart: unless-stopped
 
