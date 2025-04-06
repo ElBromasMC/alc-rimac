@@ -1,5 +1,6 @@
 services:
   webserver:
+    userns_mode: "keep-id:uid=1000,gid=1000"
     restart: no
     build:
       context: ../src
@@ -14,4 +15,7 @@ services:
       - "8010:8010"
   db:
     restart: no
+
+x-podman:
+  in_pod: false
 

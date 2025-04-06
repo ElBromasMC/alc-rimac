@@ -1,14 +1,8 @@
-*.test
-go.work
-
-# Heaviest thing on earth
-node_modules
-
 # Dotenv file
 .env
 
-# Images store
-images
+# Heaviest thing on earth
+node_modules
 
 # Build artifacts
 build
@@ -17,6 +11,3 @@ assets/static/css/tailwind.css
 assets/static/js/main.js
 view/**/*_templ.go
 
-# Also
-.git
-.air.toml

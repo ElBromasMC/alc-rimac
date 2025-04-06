@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS base
+FROM docker.io/golang:1.24-alpine AS base
 
 # Install run-time and compile-time system dependencies
 USER root
@@ -8,7 +8,8 @@ RUN apk add --no-cache \
     npm
 
 # Create and switch to non-root user
-RUN useradd -m runner
+RUN addgroup -g 1000 runner \
+    && adduser -G runner -u 1000 -D runner
 USER runner
 
 # Install run-time and compile-time local dependencies
@@ -36,10 +37,11 @@ WORKDIR /home/runner/src
 COPY --chown=runner:runner . .
 RUN make ./build/server
 
-FROM alpine:latest AS production
+FROM docker.io/alpine:latest AS production
 
 # Create and switch to non-root user
-RUN useradd -m runner
+RUN addgroup -g 1000 runner \
+    && adduser -G runner -u 1000 -D runner
 USER runner
 
 # Create and change to app directory
@@ -88,6 +90,6 @@ EXPOSE 8080
 EXPOSE 8010
 
 # Define entrypoint
-COPY --chown=runner:runner ../docker/entrypoint-dev.sh /home/runner/
+COPY --chown=runner:runner scripts/entrypoint-dev.sh /home/runner/
 ENTRYPOINT ["/home/runner/entrypoint-dev.sh"]
 
