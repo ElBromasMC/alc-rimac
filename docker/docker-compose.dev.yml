@@ -13,8 +13,8 @@ services:
     ports:
       - "8080:8080"
       - "8010:8010"
-  db:
-    restart: no
+  #db:
+    #restart: no
 
 x-podman:
   in_pod: false

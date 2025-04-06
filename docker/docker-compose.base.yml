@@ -8,7 +8,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - SESSION_KEY=${SESSION_KEY}
   db:
-    image: postgres:16-alpine
+    image: docker.io/postgres:16-alpine
     user: postgres
     volumes:
       - db-data:/var/lib/postgresql/data
