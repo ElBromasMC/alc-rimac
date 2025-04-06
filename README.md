@@ -6,12 +6,11 @@ All Last Computing website (serves as a template)
 
 ### Prerequisites
 
-* Docker
+* Podman
 
 ### .env file example
 
 ```shell
-USER_UID="1000" # It must match your current user UID
 ENV="development"
 PORT="8080"
 REL="1"
@@ -30,7 +29,7 @@ $ bin/live.sh
 
 ### Prerequisites
 
-* [Traefik](https://doc.traefik.io/traefik/getting-started/quick-start/)
+* Podman or Docker
 
 ### Docker compose .env file example
 

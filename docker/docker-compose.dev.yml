@@ -1,0 +1,17 @@
+services:
+  webserver:
+    restart: no
+    build:
+      context: ../src
+      dockerfile: ./Dockerfile
+      target: development
+    volumes:
+      - type: bind
+        source: ../src
+        target: /home/runner/src
+    ports:
+      - "8080:8080"
+      - "8010:8010"
+  db:
+    restart: no
+
