@@ -222,6 +222,12 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 	}
 	tipoProcedimiento := constancia.ProcedimientoAsignacion
+	if formulario != constancia.FormularioDevolucion {
+		tipoProcedimiento, err = constancia.GetTipoProcedimiento(c.FormValue("tipoProcedimiento"))
+		if err != nil {
+			return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
+		}
+	}
 
 	tipoEquipo, err := constancia.GetTipoEquipo(c.FormValue("tipoEquipo"))
 	if err != nil {

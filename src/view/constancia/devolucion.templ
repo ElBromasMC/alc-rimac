@@ -40,6 +40,8 @@ templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
 
         if (link1) link1.click();
         if (link2) link2.click();
+
+        window.location.reload();
     </script>
 }
 
@@ -68,6 +70,7 @@ templ Devolucion() {
 					class="block"
 					method="POST"
 					action="/constancia"
+					autocomplete="off"
 					hx-post="/constancia"
 					hx-target="#update-item-form"
 					hx-disabled-elt="find button[type='submit']"

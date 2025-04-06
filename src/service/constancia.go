@@ -496,6 +496,7 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 			c.usuario_nombre,
 			c.created_at,
 			c.updated_at,
+            c.observacion,
 			-- Inventario columns for PORTATIL
 			portatil.marca,
 			portatil.modelo,
@@ -525,7 +526,19 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 			cadena.modelo,
 			cadena.serie,
 			cadena.estado,
-			cadena.inventario
+			cadena.inventario,
+			-- Inventario columns for PORTATILOLD
+			portatil_old.marca,
+			portatil_old.modelo,
+			portatil_old.serie,
+			portatil_old.estado,
+			portatil_old.inventario,
+			-- Inventario columns for CARGADOROLD
+			cargador_old.marca,
+			cargador_old.modelo,
+			cargador_old.serie,
+			cargador_old.estado,
+			cargador_old.inventario
 		FROM constancias c
         JOIN users u ON u.user_id = c.issued_by
 		LEFT JOIN inventario portatil ON portatil.constancia_id = c.id AND portatil.tipo_inventario = 'PORTATIL'
@@ -533,6 +546,8 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 		LEFT JOIN inventario cargador ON cargador.constancia_id = c.id AND cargador.tipo_inventario = 'CARGADOR'
 		LEFT JOIN inventario mochila ON mochila.constancia_id = c.id AND mochila.tipo_inventario = 'MOCHILA'
 		LEFT JOIN inventario cadena ON cadena.constancia_id = c.id AND cadena.tipo_inventario = 'CADENA'
+		LEFT JOIN inventario portatil_old ON portatil_old.constancia_id = c.id AND portatil_old.tipo_inventario = 'PORTATILOLD'
+		LEFT JOIN inventario cargador_old ON cargador_old.constancia_id = c.id AND cargador_old.tipo_inventario = 'CARGADOROLD'
 		ORDER BY c.id;
 	`
 
@@ -559,6 +574,12 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 		"mochila_marca", "mochila_modelo", "mochila_serie", "mochila_estado", "mochila_inventario",
 		// CADENA inventario fields:
 		"cadena_marca", "cadena_modelo", "cadena_serie", "cadena_estado", "cadena_inventario",
+		// PORTATILOLD inventario fields:
+		"portatil.old_marca", "portatil.old_modelo", "portatil.old_serie", "portatil.old_estado", "portatil.old_inventario",
+		// CARGADOROLD inventario fields:
+		"cargador.old_marca", "cargador.old_modelo", "cargador.old_serie", "cargador.old_estado", "cargador.old_inventario",
+		// Observaciones
+		"observaciones",
 	}
 	if err := csvWriter.Write(header); err != nil {
 		return err
@@ -590,6 +611,7 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 			usuarioNombre      string
 			createdAt          time.Time
 			updatedAt          time.Time
+			observacion        string
 		)
 
 		// Inventario fields for each type (using sql.NullString to handle possible NULLs)
@@ -604,6 +626,10 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 			mochilaMarca, mochilaModelo, mochilaSerie, mochilaEstado, mochilaInventario sql.NullString
 			// CADENA
 			cadenaMarca, cadenaModelo, cadenaSerie, cadenaEstado, cadenaInventario sql.NullString
+			// PORTATILOLD
+			PortatilOldMarca, PortatilOldModelo, PortatilOldSerie, PortatilOldEstado, PortatilOldInventario sql.NullString
+			// CARGADOROLD
+			CargadorOldMarca, CargadorOldModelo, CargadorOldSerie, CargadorOldEstado, CargadorOldInventario sql.NullString
 		)
 
 		err := rows.Scan(
@@ -623,6 +649,7 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 			&usuarioNombre,
 			&createdAt,
 			&updatedAt,
+			&observacion,
 			// PORTATIL inventario columns.
 			&portatilMarca, &portatilModelo, &portatilSerie, &portatilEstado, &portatilInventario,
 			// MOUSE inventario columns.
@@ -633,6 +660,10 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 			&mochilaMarca, &mochilaModelo, &mochilaSerie, &mochilaEstado, &mochilaInventario,
 			// CADENA inventario columns.
 			&cadenaMarca, &cadenaModelo, &cadenaSerie, &cadenaEstado, &cadenaInventario,
+			// PORTATILOLD inventario columns.
+			&PortatilOldMarca, &PortatilOldModelo, &PortatilOldSerie, &PortatilOldEstado, &PortatilOldInventario,
+			// CARGADOROLD inventario columns.
+			&CargadorOldMarca, &CargadorOldModelo, &CargadorOldSerie, &CargadorOldEstado, &CargadorOldInventario,
 		)
 		if err != nil {
 			return err
@@ -697,6 +728,20 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 			nullToString(cadenaSerie),
 			nullToString(cadenaEstado),
 			nullToString(cadenaInventario),
+			// PORTATILOLD inventario values.
+			nullToString(PortatilOldMarca),
+			nullToString(PortatilOldModelo),
+			nullToString(PortatilOldSerie),
+			nullToString(PortatilOldEstado),
+			nullToString(PortatilOldInventario),
+			// CARGADOROLD inventario values.
+			nullToString(CargadorOldMarca),
+			nullToString(CargadorOldModelo),
+			nullToString(CargadorOldSerie),
+			nullToString(CargadorOldEstado),
+			nullToString(CargadorOldInventario),
+			// Observaciones
+			observacion,
 		}
 
 		if err := csvWriter.Write(row); err != nil {
