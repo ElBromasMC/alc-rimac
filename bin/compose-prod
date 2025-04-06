@@ -8,7 +8,7 @@ PROJECT_ROOT="$(realpath "$SCRIPT_DIR/..")"
 
 compose_arguments=(
     # Project name
-    -p "$(basename "${PROJECT_ROOT}")_prod"
+    #-p "$(basename "${PROJECT_ROOT}")_prod"
     # Merge compose files
     -f docker-compose.base.yml
     -f docker-compose.prod.yml
