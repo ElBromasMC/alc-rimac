@@ -8,6 +8,30 @@ import (
 	"strings"
 )
 
+templ AccesoriosDocuments(pdf1Base64, name string) {
+	<div class="space-y-1 hidden">
+		<div>
+			<a
+				id="pdf1"
+				class="text-azure font-semibold"
+				href={ templ.SafeURL(fmt.Sprintf("data:application/pdf;base64,%s", pdf1Base64)) }
+				target="_blank"
+				download={ name }
+			>
+				Descargar PDF
+			</a>
+		</div>
+	</div>
+	<script>
+        // Simulate a click on each anchor element to trigger the download
+        var link1 = document.getElementById("pdf1");
+
+        if (link1) link1.click();
+
+        window.location.reload();
+    </script>
+}
+
 templ Accesorios() {
 	@layout.BasePage("Formulario de asignación con accesorios") {
 		<div>
@@ -219,6 +243,7 @@ templ Accesorios() {
 						<button class="flex-0 border border-black bg-gray-300 px-4 py-1 mt-3 disabled:bg-gray-600 disabled:text-white" type="submit">Guardar e Imprimir</button>
 						<img id="submit-indicator" class="flex-0 htmx-indicator w-9" src="/static/img/bars.svg"/>
 					</div>
+					<div id="constancia-target"></div>
 				</form>
 			</section>
 		</main>

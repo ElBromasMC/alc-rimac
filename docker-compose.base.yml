@@ -1,7 +1,6 @@
 services:
   webserver:
     environment:
-      - ENV=${ENV}
       - PORT=${PORT}
       - REL=${REL}
       - DB_NAME=${DB_NAME}

@@ -4,7 +4,10 @@ package assets
 
 import (
 	"embed"
+	"io/fs"
 )
 
 //go:embed static
-var Assets embed.FS
+var embeddedAssets embed.FS
+
+var Assets fs.FS = embeddedAssets

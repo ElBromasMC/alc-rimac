@@ -1,6 +1,7 @@
 package constancia
 
 import (
+	"alc/assets"
 	"alc/handler/util"
 	"alc/model/auth"
 	"alc/model/constancia"
@@ -13,7 +14,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,7 +62,7 @@ func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inv
 		tempFile.Close() // Close immediately since we'll write our own copy
 
 		// Step 2: Open the base PDF file.
-		srcFile, err := os.Open("./pdf/constancia.pdf")
+		srcFile, err := assets.Assets.Open("static/pdf/constancia.pdf")
 		if err != nil {
 			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to open base PDF"))
 		}
@@ -86,18 +86,18 @@ func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inv
 			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage(err.Error()))
 		}
 
-		// Build the URL for the download endpoint.
-		// We send only the file base name as a parameter.
-		downloadURL := fmt.Sprintf("/download?formulario=%s&file=%s&serie=%s&usuario=%s",
-			url.QueryEscape(string(formulario)),
-			url.QueryEscape(filepath.Base(tempFilename)),
-			url.QueryEscape(cta.Serie),
-			url.QueryEscape(cta.UsuarioNombre),
-		)
-		// Instead of returning the file directly, set the HX-Redirect header.
-		(*c).Response().Header().Set("HX-Redirect", downloadURL)
+		// Send the PDF
+		// Read the first PDF file.
+		pdfBytes, err := os.ReadFile(tempFilename)
+		if err != nil {
+			return (*c).String(http.StatusInternalServerError, "Error reading PDF")
+		}
+		// Encode to base64.
+		pdfBase64 := base64.StdEncoding.EncodeToString(pdfBytes)
 
-		return util.Render(*c, http.StatusOK, component.InfoMessage("Cargado exitosamente"))
+		(*c).Response().Header().Set("HX-Retarget", "#constancia-target")
+		return util.Render(*c, http.StatusOK, view.AccesoriosDocuments(pdfBase64, fmt.Sprintf("%s-%s", cta.Serie, cta.UsuarioNombre)))
+
 	} else if formulario == constancia.FormularioDevolucion {
 		// Generate PDFs
 		tempFile1, err := os.CreateTemp("./pdf", "output-*.pdf")
@@ -115,7 +115,7 @@ func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inv
 		tempFile2.Close() // Close immediately since we'll write our own copy
 
 		// Open the base PDF file.
-		srcFile, err := os.Open("./pdf/constancia.pdf")
+		srcFile, err := assets.Assets.Open("static/pdf/constancia.pdf")
 		if err != nil {
 			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to open base PDF"))
 		}
@@ -133,17 +133,18 @@ func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inv
 		}
 		dstFile1.Close()
 
-		// Reset srcFile pointer to the beginning.
-		_, err = srcFile.Seek(0, 0)
+		// Open the asset again for the second copy.
+		srcFile2, err := assets.Assets.Open("static/pdf/constancia.pdf")
 		if err != nil {
-			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to reset file pointer"))
+			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to open base PDF for second copy"))
 		}
+		defer srcFile2.Close()
 
 		dstFile2, err := os.Create(tempFilename2)
 		if err != nil {
 			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to create destination file"))
 		}
-		_, err = io.Copy(dstFile2, srcFile)
+		_, err = io.Copy(dstFile2, srcFile2)
 		if err != nil {
 			dstFile2.Close()
 			return util.Render(*c, http.StatusInternalServerError, component.ErrorMessage("Failed to copy PDF"))

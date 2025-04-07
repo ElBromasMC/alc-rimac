@@ -6,8 +6,10 @@ services:
       context: ./src
       dockerfile: ./Dockerfile
       target: production
-    volumes:
-      - ./pdf:/home/runner/app/pdf
+    environment:
+      - ENV=production
+    ports:
+      - "8080:8080"
   db:
     restart: unless-stopped
 

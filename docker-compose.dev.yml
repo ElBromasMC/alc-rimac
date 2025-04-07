@@ -6,6 +6,8 @@ services:
       context: ./src
       dockerfile: ./Dockerfile
       target: development
+    environment:
+      - ENV=development
     volumes:
       - type: bind
         source: ./src

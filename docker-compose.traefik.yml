@@ -3,6 +3,7 @@ services:
     networks:
       - http_network
       - store_network
+    ports: !reset []
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=http_network"

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"alc/assets"
 	"alc/handler/admin"
 	"alc/handler/constancia"
 	"alc/handler/public"
@@ -84,7 +85,7 @@ func main() {
 	loggedMiddleware := middle.Logged
 
 	// Static files
-	static(e)
+	e.StaticFS("/static", echo.MustSubFS(assets.Assets, "static"))
 
 	// Page routes
 	e.GET("/", ch.HandleIndexShow, authMiddleware, loggedMiddleware)
