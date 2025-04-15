@@ -34,14 +34,22 @@ templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
 		</div>
 	</div>
 	<script>
-        // Simulate a click on each anchor element to trigger the download
-        var link1 = document.getElementById("pdf1");
-        var link2 = document.getElementById("pdf2");
-
-        if (link1) link1.click();
-        if (link2) link2.click();
-
-        window.location.reload();
+        setTimeout(function() {
+            var link1 = document.getElementById("pdf1");
+            if (link1) {
+                link1.click();
+            }
+            
+            setTimeout(function() {
+                var link2 = document.getElementById("pdf2");
+                if (link2) {
+                    link2.click();
+                }
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1000);
+            }, 2000);
+        }, 1000);
     </script>
 }
 
