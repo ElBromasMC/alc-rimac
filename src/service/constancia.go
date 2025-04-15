@@ -325,6 +325,32 @@ func (s Constancia) BulkInsertEquipos(ctx context.Context, equipos []constancia.
 }
 
 // BulkInsertClientes performs a bulk insert of a list of Cliente into the clientes table.
+//func (s Constancia) BulkInsertClientes(ctx context.Context, clientes []constancia.Cliente) error {
+//	if len(clientes) == 0 {
+//		return nil // nothing to insert
+//	}
+//
+//	// Prepare rows for CopyFrom: sap_id, usuario.
+//	rows := make([][]interface{}, len(clientes))
+//	for i, cl := range clientes {
+//		rows[i] = []interface{}{
+//			cl.SapId,
+//			cl.Usuario,
+//		}
+//	}
+//
+//	// Perform the bulk insert using CopyFrom.
+//	_, err := s.db.CopyFrom(
+//		ctx,
+//		pgx.Identifier{"clientes"},
+//		[]string{"sap_id", "usuario"},
+//		pgx.CopyFromRows(rows),
+//	)
+//	return err
+//}
+
+// BulkInsertClientes performs a bulk insert of a list of Cliente into the clientes table.
+// It avoids conflict errors by first inserting into a temporary staging table.
 func (s Constancia) BulkInsertClientes(ctx context.Context, clientes []constancia.Cliente) error {
 	if len(clientes) == 0 {
 		return nil // nothing to insert
@@ -339,14 +365,54 @@ func (s Constancia) BulkInsertClientes(ctx context.Context, clientes []constanci
 		}
 	}
 
-	// Perform the bulk insert using CopyFrom.
-	_, err := s.db.CopyFrom(
+	// Start a transaction so that all operations are atomic.
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		// Ensure the transaction is rolled back in case of an error.
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+
+	// Create a temporary staging table with the same structure (only needed columns) but no UNIQUE constraints.
+	tempTableSQL := `
+        CREATE TEMP TABLE temp_clientes (
+            sap_id VARCHAR(50),
+            usuario VARCHAR(255)
+        ) ON COMMIT DROP;
+    `
+	if _, err = tx.Exec(ctx, tempTableSQL); err != nil {
+		return err
+	}
+
+	// Bulk copy into the temporary table.
+	_, err = tx.CopyFrom(
 		ctx,
-		pgx.Identifier{"clientes"},
+		pgx.Identifier{"temp_clientes"},
 		[]string{"sap_id", "usuario"},
 		pgx.CopyFromRows(rows),
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Upsert from the temporary table into the main clientes table.
+	// Using ON CONFLICT DO NOTHING ensures that duplicate sap_id entries are ignored.
+	upsertSQL := `
+        INSERT INTO clientes (sap_id, usuario)
+        SELECT sap_id, usuario
+        FROM temp_clientes
+        ON CONFLICT (sap_id) DO NOTHING;
+    `
+	if _, err = tx.Exec(ctx, upsertSQL); err != nil {
+		return err
+	}
+
+	// Commit the transaction.
+	return tx.Commit(ctx)
 }
 
 func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constancia.Constancia, inventarios []constancia.Inventario) error {
