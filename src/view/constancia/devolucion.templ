@@ -9,7 +9,7 @@ import (
 )
 
 templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
-	<div class="space-y-1 hidden">
+	<div class="space-y-1">
 		<div>
 			<a
 				id="pdf1"
@@ -34,22 +34,31 @@ templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
 		</div>
 	</div>
 	<script>
-        setTimeout(function() {
-            var link1 = document.getElementById("pdf1");
-            if (link1) {
-                link1.click();
-            }
-            
-            setTimeout(function() {
-                var link2 = document.getElementById("pdf2");
-                if (link2) {
-                    link2.click();
-                }
-                setTimeout(function() {
-                    window.location.reload();
-                }, 1000);
-            }, 2000);
-        }, 1000);
+        document.getElementById('devolucion-form').reset()
+        // Create flags for each link click
+        let pdf1Clicked = false;
+        let pdf2Clicked = false;
+
+        // Function to check if both anchors have been clicked and remove them
+        function checkAndRemoveAnchors() {
+        if (pdf1Clicked && pdf2Clicked) {
+            window.location.reload();
+            //document.getElementById("pdf1").remove();
+            //document.getElementById("pdf2").remove();
+        }
+        }
+
+        // Add event listener to pdf1 anchor
+        document.getElementById("pdf1").addEventListener("click", function() {
+        pdf1Clicked = true;
+        checkAndRemoveAnchors();
+        });
+
+        // Add event listener to pdf2 anchor
+        document.getElementById("pdf2").addEventListener("click", function() {
+        pdf2Clicked = true;
+        checkAndRemoveAnchors();
+        });
     </script>
 }
 
@@ -75,6 +84,7 @@ templ Devolucion() {
 			</div>
 			<section>
 				<form
+					id="devolucion-form"
 					class="block"
 					method="POST"
 					action="/constancia"
