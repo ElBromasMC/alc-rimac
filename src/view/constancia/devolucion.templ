@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
+templ DevolucionDocuments(pdf1Base64, pdf2Base64, name1 string, name2 string) {
 	<div class="space-y-1">
 		<div>
 			<a
@@ -16,7 +16,7 @@ templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
 				class="text-azure font-semibold"
 				href={ templ.SafeURL(fmt.Sprintf("data:application/pdf;base64,%s", pdf1Base64)) }
 				target="_blank"
-				download={ fmt.Sprintf("%s-ASIGNACION", name) }
+				download={ fmt.Sprintf("%s-ASIGNACION", name1) }
 			>
 				Descargar Asignación
 			</a>
@@ -27,7 +27,7 @@ templ DevolucionDocuments(pdf1Base64, pdf2Base64, name string) {
 				class="text-azure font-semibold"
 				href={ templ.SafeURL(fmt.Sprintf("data:application/pdf;base64,%s", pdf2Base64)) }
 				target="_blank"
-				download={ fmt.Sprintf("%s-RECUPERACION", name) }
+				download={ fmt.Sprintf("%s-RECUPERACION", name2) }
 			>
 				Descargar Recuperación
 			</a>

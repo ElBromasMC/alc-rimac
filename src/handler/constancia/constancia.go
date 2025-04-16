@@ -173,12 +173,14 @@ func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inv
 		}
 
 		// Recuperacion (Equipo antiguo)
+		serieAntiguo := ""
 		cta2 := cta
 		cta2.TipoProcedimiento = constancia.ProcedimientoRecuperacion
 		var inventarios2 []constancia.Inventario
 		for _, i := range inventarios {
 			if i.TipoInventario == constancia.InventarioPortatilOld {
 				in := i
+				serieAntiguo = in.Serie
 				in.TipoInventario = constancia.InventarioPortatil
 				inventarios2 = append(inventarios2, in)
 			} else if i.TipoInventario == constancia.InventarioCargadorOld {
@@ -209,7 +211,11 @@ func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inv
 		pdf2Base64 := base64.StdEncoding.EncodeToString(pdf2Bytes)
 
 		(*c).Response().Header().Set("HX-Retarget", "#constancia-target")
-		return util.Render(*c, http.StatusOK, view.DevolucionDocuments(pdf1Base64, pdf2Base64, fmt.Sprintf("%s-%s", cta.Serie, cta.UsuarioNombre)))
+		return util.Render(*c, http.StatusOK, view.DevolucionDocuments(pdf1Base64,
+			pdf2Base64,
+			fmt.Sprintf("%s-%s", cta.Serie, cta.UsuarioNombre),
+			fmt.Sprintf("%s-%s", serieAntiguo, cta.UsuarioNombre),
+		))
 	} else {
 		return util.Render(*c, http.StatusOK, component.ErrorMessage("Tipo de formulario inválido"))
 	}
