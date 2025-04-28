@@ -180,3 +180,27 @@ func (i Inventario) Normalize() (Inventario, error) {
 	i.Inventario = strings.TrimSpace(strings.ToUpper(i.Inventario))
 	return i, nil
 }
+
+type BorradoSeguro struct {
+	Id              int64
+	Serie           string
+	InventarioRimac string
+	SerieDisco      string
+	Marca           string
+	Modelo          string
+	CertificadoPath string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+func (b BorradoSeguro) Normalize() (BorradoSeguro, error) {
+	b.Serie = strings.TrimSpace(strings.ToUpper(b.Serie))
+	b.InventarioRimac = strings.TrimSpace(strings.ToUpper(b.InventarioRimac))
+	b.SerieDisco = strings.TrimSpace(strings.ToUpper(b.SerieDisco))
+	b.Marca = strings.TrimSpace(strings.ToUpper(b.Marca))
+	b.Modelo = strings.TrimSpace(strings.ToUpper(b.Modelo))
+	if b.Serie == "" || b.InventarioRimac == "" || b.SerieDisco == "" || b.Marca == "" || b.Modelo == "" {
+		return BorradoSeguro{}, errors.New("campos obligatorios faltantes para borrado seguro")
+	}
+	return b, nil
+}

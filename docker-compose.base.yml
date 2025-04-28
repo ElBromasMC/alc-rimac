@@ -1,11 +1,14 @@
 services:
   webserver:
+    volumes:
+      - pdf-data:/home/runner/data
     environment:
       - PORT=${PORT}
       - REL=${REL}
       - DB_NAME=${DB_NAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - SESSION_KEY=${SESSION_KEY}
+      - PDF_STORAGE_PATH=/home/runner/data
   db:
     image: docker.io/postgres:16-alpine
     user: postgres
@@ -28,4 +31,5 @@ services:
 
 volumes:
   db-data:
+  pdf-data:
 

@@ -97,10 +97,14 @@ func main() {
 	gc.GET("", ch.HandleClonacionFormShow)
 	gc.GET("/equipo", ch.HandleClonacionEquipoFetch)
 	gc.POST("", ch.HandleClonacionInsert)
+	gc.GET("/report", ch.HandleEquiposReportDownload, adminMiddleware)
 
 	gb := e.Group("/borrado")
 	gb.Use(authMiddleware, loggedMiddleware)
 	gb.GET("", ch.HandleBorradoFormShow)
+	gb.GET("/inventario", ch.HandleBorradoInventarioFetch)
+	gb.POST("", ch.HandleBorradoInsert)
+	gb.GET("/report", ch.HandleBorradosReportDownload, adminMiddleware)
 
 	e.GET("/cliente", ch.HandleUsuarioFetch, authMiddleware, loggedMiddleware)
 	e.GET("/equipo", ch.HandleEquipoFetch, authMiddleware, loggedMiddleware)

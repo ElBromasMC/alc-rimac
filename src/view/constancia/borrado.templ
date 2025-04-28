@@ -1,0 +1,126 @@
+package constancia
+
+import (
+	"alc/model/auth"
+	"alc/model/constancia"
+	"alc/view/layout"
+)
+
+// BorradoAutocomplete renders the part of the form that depends on the Serie lookup.
+templ BorradoAutocomplete(inv constancia.Inventario, notFound bool, originalSerie string) {
+	if !notFound {
+		// --- Found ---
+		<div class="flex gap-6">
+			<label class="w-32">Marca</label>
+			<input type="text" name="Marca" value={ inv.Marca } class="flex-1" readonly disabled/>
+		</div>
+		<div class="flex gap-6">
+			<label class="w-32">Modelo</label>
+			<input type="text" name="Modelo" value={ inv.Modelo } class="flex-1" readonly disabled/>
+		</div>
+	} else {
+		// --- Not Found ---
+		<div class="p-2 border border-orange-400 bg-orange-100 text-orange-700 my-2">
+			No se encontró el equipo antiguo con la serie '{ originalSerie }'.
+			Por favor, verifique la serie o ingrese la serie del equipo nuevo asociado y los datos faltantes.
+		</div>
+		<div class="flex gap-6">
+			<label class="w-32 font-semibold text-blue-600">Serie Equipo Nuevo</label>
+			<input type="text" name="SerieEquipoNuevo" value="" class="flex-1" required/>
+		</div>
+		<div class="flex gap-6">
+			<label class="w-32">Marca</label>
+			<input type="text" name="Marca" value="" class="flex-1" required/>
+		</div>
+		<div class="flex gap-6">
+			<label class="w-32">Modelo</label>
+			<input type="text" name="Modelo" value="" class="flex-1" required/>
+		</div>
+	}
+}
+
+// BorradoForm renders the main form structure.
+templ BorradoForm() {
+	<form
+		class="[&_input:not([type='file'])]:border [&_input:not([type='file'])]:border-black [&_input:disabled]:bg-gray-300 [&_label]:block"
+		method="POST"
+		action="/borrado"
+		enctype="multipart/form-data"
+		hx-post="/borrado"
+		hx-encoding="multipart/form-data"
+		hx-disabled-elt="find button[type='submit']"
+		hx-indicator="#submit-indicator"
+		hx-target="#submit-error-container"
+		autocomplete="off"
+	>
+		<h2 class="font-bold text-xl mb-4">Datos del Equipo Antiguo</h2>
+		<div class="px-4 py-2 border border-black space-y-2 mb-4">
+			<div class="flex gap-6">
+				<label class="w-32">Serie</label>
+				<input
+					type="text"
+					name="Serie"
+					required
+					class="flex-1 uppercase"
+					placeholder="Buscar"
+					hx-get="/borrado/inventario"
+					hx-target="#borrado-autocomplete-target"
+					hx-trigger="input changed delay:500ms, keyup[keyCode==13]"
+					hx-indicator="#serie-lookup-indicator"
+				/>
+				<img id="serie-lookup-indicator" class="htmx-indicator h-6 w-6" src="/static/img/bars.svg"/>
+			</div>
+			<div class="flex gap-6">
+				<label class="w-32">Inventario RIMAC</label>
+				<input type="text" name="InventarioRIMAC" required class="flex-1 uppercase"/>
+			</div>
+			<div class="flex gap-6">
+				<label class="w-32">Serie Disco</label>
+				<input type="text" name="SerieDisco" required class="flex-1 uppercase"/>
+			</div>
+			<div id="borrado-autocomplete-target" class="space-y-2">
+				<div class="flex gap-6">
+					<label class="w-32">Marca</label>
+					<input type="text" name="Marca" value="" class="flex-1" readonly disabled/>
+				</div>
+				<div class="flex gap-6">
+					<label class="w-32">Modelo</label>
+					<input type="text" name="Modelo" value="" class="flex-1" readonly disabled/>
+				</div>
+			</div>
+		</div>
+		<h2 class="font-bold text-xl mb-2">Certificado</h2>
+		<div class="px-4 py-2 border border-black space-y-2 mb-4">
+			<div class="flex gap-6">
+				<label class="w-32">Cargar certificado</label>
+				<input type="file" name="certificado" required accept=".pdf"/>
+			</div>
+		</div>
+		<div id="submit-error-container"></div>
+		<div class="flex gap-3 mt-4">
+			<button class="flex-0 border border-black bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400" type="submit">
+				Registrar Borrado
+			</button>
+			<img id="submit-indicator" class="htmx-indicator h-8 w-8" src="/static/img/bars.svg"/>
+		</div>
+	</form>
+}
+
+// Borrado is the main page component.
+templ Borrado() {
+	@layout.BasePage("Registrar borrado seguro") {
+		<main class="space-y-6 max-w-3xl mx-auto p-4">
+			<div class="flex justify-center mb-6">
+				<img src="/static/img/lenovo.svg"/>
+			</div>
+			// Optional: Display logged-in user info
+			if user, ok := auth.GetUser(ctx); ok {
+				<div class="text-sm text-gray-600 mb-4">
+					<span class="font-semibold">Registrando como:</span>
+					<span>{ user.Name } ({ user.Email })</span>
+				</div>
+			}
+			@BorradoForm()
+		</main>
+	}
+}

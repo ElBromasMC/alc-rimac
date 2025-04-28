@@ -16,7 +16,8 @@ USER runner
 RUN go install github.com/a-h/templ/cmd/templ@latest
 
 # Create required folders and change to source directory
-RUN mkdir /home/runner/src
+RUN mkdir /home/runner/src \
+    /home/runner/data
 WORKDIR /home/runner/src
 
 # Install run-time and compile-time project dependencies
@@ -46,7 +47,8 @@ USER runner
 
 # Create required folders and change to app directory
 RUN mkdir /home/runner/app \
-    /home/runner/app/pdf
+    /home/runner/app/pdf \
+    /home/runner/data
 WORKDIR /home/runner/app
 
 # Deploy the application binary into a lean image

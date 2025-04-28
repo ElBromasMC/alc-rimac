@@ -152,3 +152,28 @@ ALTER TYPE tipo_inventario_enum ADD VALUE 'CARGADOROLD';
 
 ALTER TABLE constancias ADD COLUMN observacion TEXT NOT NULL DEFAULT '';
 
+--
+-- Sync 4
+--
+
+CREATE TABLE borrados_seguros (
+    id BIGSERIAL PRIMARY KEY,
+    serie VARCHAR(100) NOT NULL,
+    inventario_rimac VARCHAR(100) NOT NULL,
+    serie_disco VARCHAR(100) NOT NULL,
+    marca VARCHAR(100) NOT NULL,
+    modelo VARCHAR(100) NOT NULL,
+    certificado_path TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_borrados_seguros_serie ON borrados_seguros (serie);
+
+-- Add updated_at column to borrados_seguros
+ALTER TABLE borrados_seguros
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- Add UNIQUE constraint to the serie column in borrados_seguros
+ALTER TABLE borrados_seguros
+ADD CONSTRAINT unique_borrados_seguros_serie UNIQUE (serie);
+
