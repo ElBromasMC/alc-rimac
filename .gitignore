@@ -4,6 +4,8 @@
 # Heaviest thing on earth
 node_modules/
 
+*.pdf
+
 # Build artifacts
 build/
 tmp/
