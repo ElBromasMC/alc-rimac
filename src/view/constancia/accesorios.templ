@@ -158,7 +158,7 @@ templ Accesorios() {
 								<input class="flex-1 border border-black" type="text" value="NUEVO" name={ fmt.Sprintf("%s-estado", "PORTATIL") } required/>
 							</div>
 							<div id="portatil-form" class="space-y-1">
-								@PortatilForm(constancia.Equipo{}, "")
+								@PortatilForm(constancia.Equipo{}, "", false)
 							</div>
 						</div>
 						for _, t := range []string{"MOUSE", "CABLERED", "CARGADOR", "MOCHILA", "CADENA"} {

@@ -40,7 +40,7 @@ func (h *Handler) HandleClonacionInsert(c echo.Context) error {
 	activoFijo := c.FormValue("ActivoFijo")
 
 	serie = strings.ToUpper(strings.ReplaceAll(serie, " ", ""))
-	activoFijo = strings.TrimSpace(activoFijo)
+	activoFijo = strings.ToUpper(strings.ReplaceAll(activoFijo, " ", ""))
 
 	if serie == "" {
 		return util.Render(c, http.StatusBadRequest, component.ErrorMessage("El campo 'Serie' es obligatorio."))

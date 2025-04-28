@@ -13,7 +13,7 @@ templ UsuarioForm(u constancia.Cliente, msg string) {
 	</div>
 }
 
-templ PortatilForm(p constancia.Equipo, msg string) {
+templ PortatilForm(p constancia.Equipo, msg string, manual bool) {
 	<div class="text-red-600">{ msg }</div>
 	<div class="flex gap-6">
 		<label>Marca</label>
@@ -25,7 +25,17 @@ templ PortatilForm(p constancia.Equipo, msg string) {
 	</div>
 	<div class="flex gap-6">
 		<label>Inventario RIMAC</label>
-		<input class="flex-1 border border-black bg-gray-300" type="text" value={ p.ActivoFijo } disabled/>
+		<input
+			class="flex-1 border border-black disabled:bg-gray-300"
+			type="text"
+			value={ p.ActivoFijo }
+			if !manual {
+				disabled
+			} else {
+				name="activoFijo"
+				required
+			}
+		/>
 	</div>
 }
 

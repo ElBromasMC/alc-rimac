@@ -35,7 +35,7 @@ func (h *Handler) HandleEquipoFetch(c echo.Context) error {
 	serie = strings.ToUpper(strings.ReplaceAll(serie, " ", ""))
 	equipo, err := h.ConstanciaService.GetEquipoBySerie(context.Background(), serie)
 	if err != nil {
-		return util.Render(c, http.StatusOK, view.PortatilForm(constancia.Equipo{}, "Equipo no encontrado"))
+		return util.Render(c, http.StatusOK, view.PortatilForm(constancia.Equipo{}, "Equipo no encontrado", false))
 	}
 	// Check if constancia already exists
 	exists, err := h.ConstanciaService.ConstanciaExists(context.Background(), equipo.Serie)
@@ -43,11 +43,16 @@ func (h *Handler) HandleEquipoFetch(c echo.Context) error {
 		return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
 	}
 
+	manual := false
 	msg := ""
 	if exists {
-		msg = "El equipo ya ha sido registrado."
+		msg += "El equipo ya ha sido registrado. "
 	}
-	return util.Render(c, http.StatusOK, view.PortatilForm(equipo, msg))
+	if strings.ReplaceAll(equipo.ActivoFijo, " ", "") == "" {
+		manual = true
+		msg += "El equipo no tiene un activo fijo registrado. Ingréselo manualmente. "
+	}
+	return util.Render(c, http.StatusOK, view.PortatilForm(equipo, msg, manual))
 }
 
 func generateSendPDF(h *Handler, c *echo.Context, cta constancia.Constancia, inventarios []constancia.Inventario, formulario constancia.TipoFormulario) error {
@@ -261,6 +266,7 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 
 	serie := c.FormValue("PORTATIL-serie")
 	serie = strings.ToUpper(strings.ReplaceAll(serie, " ", ""))
+	activoFijo := strings.ToUpper(strings.ReplaceAll(c.FormValue("activoFijo"), " ", ""))
 	equipo, err := h.ConstanciaService.GetEquipoBySerie(context.Background(), serie)
 	if err != nil {
 		return util.Render(c, http.StatusOK, component.ErrorMessage("Portatil inválido"))
@@ -288,6 +294,17 @@ func (h *Handler) HandleConstanciaInsert(c echo.Context) error {
 	}
 
 	var inventarios []constancia.Inventario
+
+	if strings.ReplaceAll(equipo.ActivoFijo, " ", "") == "" {
+		if activoFijo == "" {
+			return util.Render(c, http.StatusOK, component.ErrorMessage("Debe ingresar el Activo Fijo del Equipo Nuevo"))
+		}
+		err := h.ConstanciaService.UpdateEquipoActivoFijoBySerie(c.Request().Context(), serie, activoFijo)
+		if err != nil {
+			return util.Render(c, http.StatusOK, component.ErrorMessage(err.Error()))
+		}
+		equipo.ActivoFijo = activoFijo
+	}
 
 	portatil := constancia.Inventario{
 		TipoInventario: constancia.InventarioPortatil,
