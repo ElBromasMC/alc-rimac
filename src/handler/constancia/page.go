@@ -18,3 +18,11 @@ func (h *Handler) HandleAccesoriosFormShow(c echo.Context) error {
 func (h *Handler) HandleDevolucionFormShow(c echo.Context) error {
 	return util.Render(c, http.StatusOK, view.Devolucion())
 }
+
+func (h *Handler) HandleClonacionFormShow(c echo.Context) error {
+	return util.Render(c, http.StatusOK, view.Clonacion())
+}
+
+func (h *Handler) HandleBorradoFormShow(c echo.Context) error {
+	return nil
+}

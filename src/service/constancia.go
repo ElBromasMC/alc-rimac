@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -905,4 +906,32 @@ func (s Constancia) ExportConstanciasWithInventariosCSV(ctx context.Context, w i
 
 	csvWriter.Flush()
 	return csvWriter.Error()
+}
+
+// UpdateEquipoActivoFijoBySerie updates the activo_fijo for an equipo identified by its serie.
+func (s Constancia) UpdateEquipoActivoFijoBySerie(ctx context.Context, serie string, activoFijo string) error {
+	// Normalize inputs (optional here, but good practice if needed)
+	serie = strings.ToUpper(strings.ReplaceAll(serie, " ", ""))
+	activoFijo = strings.TrimSpace(activoFijo)
+
+	if serie == "" || activoFijo == "" {
+		return errors.New("serie and activo fijo cannot be empty")
+	}
+
+	// Prepare the SQL UPDATE statement
+	sql := `UPDATE equipos 
+			SET activo_fijo = $1, updated_at = NOW() 
+			WHERE serie = $2`
+
+	// Execute the command
+	commandTag, err := s.db.Exec(ctx, sql, activoFijo, serie)
+	if err != nil {
+		return fmt.Errorf("database error updating equipo with serie %s: %w", serie, err)
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

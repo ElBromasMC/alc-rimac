@@ -1,0 +1,90 @@
+package constancia
+
+import (
+	"alc/model/auth"
+	"alc/model/constancia"
+	"alc/view/layout"
+)
+
+templ ClonacionEquipoAuto(equipo constancia.Equipo, msg string) {
+	if msg != "" {
+		<div class="text-red-600 font-semibold">{ msg }</div>
+	}
+	<div class="flex gap-6">
+		<label>Activo fijo</label>
+		<input type="text" name="ActivoFijo" value={ equipo.ActivoFijo } required/>
+	</div>
+	<div class="flex gap-6">
+		<label>Tipo Equipo</label>
+		<input type="text" value={ equipo.TipoEquipo } disabled/>
+	</div>
+	<div class="flex gap-6">
+		<label>Marca</label>
+		<input type="text" value={ equipo.Marca } disabled/>
+	</div>
+	<div class="flex gap-6">
+		<label>MTM</label>
+		<input type="text" value={ equipo.MTM } disabled/>
+	</div>
+	<div class="flex gap-6">
+		<label>Modelo</label>
+		<input type="text" value={ equipo.Modelo } disabled/>
+	</div>
+}
+
+templ ClonacionForm() {
+	<form
+		class="[&_input]:border [&_input]:border-black [&_input]:flex-1 [&_input:disabled]:bg-gray-300"
+		method="POST"
+		action="/clonacion"
+		autocomplete="off"
+		hx-post="/clonacion"
+		hx-disabled-elt="find button[type='submit']"
+		hx-indicator="#submit-indicator"
+		hx-target="#submit-error"
+	>
+		<h2 class="font-bold">Equipo nuevo</h2>
+		<div class="px-4 py-2 border border-black space-y-1">
+			<div class="flex gap-6">
+				<label>Serie</label>
+				<input
+					type="text"
+					name="Serie"
+					required
+					placeholder="Buscar"
+					hx-get="/clonacion/equipo"
+					hx-target="#equipo-auto-form"
+					hx-trigger="input changed delay:500ms"
+				/>
+			</div>
+			<div id="equipo-auto-form" class="space-y-1">
+				@ClonacionEquipoAuto(constancia.Equipo{}, "")
+			</div>
+		</div>
+		<div class="flex gap-3">
+			<button class="flex-0 border border-black bg-gray-300 px-4 py-1 mt-3 disabled:bg-gray-600 disabled:text-white" type="submit">Enviar</button>
+			<img id="submit-indicator" class="flex-0 htmx-indicator w-9" src="/static/img/bars.svg"/>
+		</div>
+	</form>
+}
+
+templ Clonacion() {
+	@layout.BasePage("Formulario de clonación") {
+		<main class="space-y-3">
+			<div class="flex justify-center">
+				<img src="/static/img/lenovo.svg"/>
+			</div>
+			<!-- Tecnico -->
+			<div>
+				if user, ok := auth.GetUser(ctx); ok {
+					<div>
+						<span class="font-bold">Nombre del Técnico:</span>
+						<span>{ user.Name }</span>
+					</div>
+				}
+			</div>
+			@ClonacionForm()
+			<div class="text-red-600 font-semibold" id="submit-error"></div>
+		</main>
+	}
+}
