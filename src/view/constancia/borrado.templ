@@ -11,11 +11,11 @@ templ BorradoAutocomplete(inv constancia.Inventario, notFound bool, originalSeri
 	if !notFound {
 		// --- Found ---
 		<div class="flex gap-6">
-			<label class="w-32">Marca</label>
+			<label class="w-32">Marca Antiguo</label>
 			<input type="text" name="Marca" value={ inv.Marca } class="flex-1" readonly disabled/>
 		</div>
 		<div class="flex gap-6">
-			<label class="w-32">Modelo</label>
+			<label class="w-32">Modelo Antiguo</label>
 			<input type="text" name="Modelo" value={ inv.Modelo } class="flex-1" readonly disabled/>
 		</div>
 	} else {
@@ -29,11 +29,11 @@ templ BorradoAutocomplete(inv constancia.Inventario, notFound bool, originalSeri
 			<input type="text" name="SerieEquipoNuevo" value="" class="flex-1" required/>
 		</div>
 		<div class="flex gap-6">
-			<label class="w-32">Marca</label>
+			<label class="w-32">Marca Antiguo</label>
 			<input type="text" name="Marca" value="" class="flex-1" required/>
 		</div>
 		<div class="flex gap-6">
-			<label class="w-32">Modelo</label>
+			<label class="w-32">Modelo Antiguo</label>
 			<input type="text" name="Modelo" value="" class="flex-1" required/>
 		</div>
 	}
@@ -80,11 +80,11 @@ templ BorradoForm() {
 			</div>
 			<div id="borrado-autocomplete-target" class="space-y-2">
 				<div class="flex gap-6">
-					<label class="w-32">Marca</label>
+					<label class="w-32">Marca Antiguo</label>
 					<input type="text" name="Marca" value="" class="flex-1" readonly disabled/>
 				</div>
 				<div class="flex gap-6">
-					<label class="w-32">Modelo</label>
+					<label class="w-32">Modelo Antiguo</label>
 					<input type="text" name="Modelo" value="" class="flex-1" readonly disabled/>
 				</div>
 			</div>
@@ -98,7 +98,10 @@ templ BorradoForm() {
 		</div>
 		<div id="submit-error-container"></div>
 		<div class="flex gap-3 mt-4">
-			<button class="flex-0 border border-black bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400" type="submit">
+			<button
+				class="flex-0 border border-black bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+				type="submit"
+			>
 				Registrar Borrado
 			</button>
 			<img id="submit-indicator" class="htmx-indicator h-8 w-8" src="/static/img/bars.svg"/>
