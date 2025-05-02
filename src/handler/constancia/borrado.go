@@ -89,15 +89,13 @@ func (h *Handler) HandleBorradoInsert(c echo.Context) error {
 			return util.Render(c, http.StatusOK, component.ErrorMessage(fmt.Sprintf("Error al corregir datos del inventario antiguo: %v", err)))
 		}
 	} else {
-		inv, err := h.ConstanciaService.GetInventarioPortatilOldBySerie(c.Request().Context(), serieAntiguo)
+		_, err := h.ConstanciaService.GetInventarioPortatilOldBySerie(c.Request().Context(), serieAntiguo)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return util.Render(c, http.StatusOK, view.BorradoAutocomplete(constancia.Inventario{}, true, serieAntiguo))
 			}
 			return util.Render(c, http.StatusOK, view.BorradoAutocomplete(constancia.Inventario{}, true, serieAntiguo))
 		}
-		marca = inv.Marca
-		modelo = inv.Modelo
 	}
 
 	// --- 6. Save PDF Certificate ---

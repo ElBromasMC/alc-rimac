@@ -12,11 +12,11 @@ templ BorradoAutocomplete(inv constancia.Inventario, notFound bool, originalSeri
 		// --- Found ---
 		<div class="flex gap-6">
 			<label class="w-32">Marca Antiguo</label>
-			<input type="text" name="Marca" value={ inv.Marca } class="flex-1" readonly disabled/>
+			<input type="text" name="Marca" value={ inv.Marca } class="flex-1"/>
 		</div>
 		<div class="flex gap-6">
 			<label class="w-32">Modelo Antiguo</label>
-			<input type="text" name="Modelo" value={ inv.Modelo } class="flex-1" readonly disabled/>
+			<input type="text" name="Modelo" value={ inv.Modelo } class="flex-1"/>
 		</div>
 	} else {
 		// --- Not Found ---
