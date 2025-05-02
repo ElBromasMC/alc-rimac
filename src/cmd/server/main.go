@@ -105,6 +105,7 @@ func main() {
 	gb.GET("/inventario", ch.HandleBorradoInventarioFetch)
 	gb.POST("", ch.HandleBorradoInsert)
 	gb.GET("/report", ch.HandleBorradosReportDownload, adminMiddleware)
+	gb.GET("/zip", ch.DownloadZipHandler, adminMiddleware)
 
 	e.GET("/cliente", ch.HandleUsuarioFetch, authMiddleware, loggedMiddleware)
 	e.GET("/equipo", ch.HandleEquipoFetch, authMiddleware, loggedMiddleware)

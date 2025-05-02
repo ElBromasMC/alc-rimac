@@ -7,6 +7,8 @@ import (
 	"alc/model/constancia"
 	"alc/view/component"
 	view "alc/view/constancia"
+	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -448,4 +450,106 @@ func (h *Handler) DownloadPDFHandler(c echo.Context) error {
 	} else {
 		return c.NoContent(http.StatusBadRequest)
 	}
+}
+
+func (h *Handler) DownloadZipHandler(c echo.Context) error {
+	storagePath := os.Getenv("PDF_STORAGE_PATH")
+	// Create a buffer to write our archive to.
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
+
+	// Read the directory contents
+	files, err := os.ReadDir(storagePath)
+	if err != nil {
+		c.Logger().Errorf("Failed to read directory %s: %v", storagePath, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Could not read storage directory.")
+	}
+
+	foundFiles := false // Flag to track if any files were actually added
+
+	// Iterate over the files in the directory
+	for _, file := range files {
+		// Skip directories
+		if file.IsDir() {
+			continue
+		}
+
+		// Construct the full path to the file
+		filePath := filepath.Join(storagePath, file.Name())
+
+		// Open the file to be added
+		fileToZip, err := os.Open(filePath)
+		if err != nil {
+			// Log the error but continue with other files
+			c.Logger().Warnf("Failed to open file %s for zipping: %v. Skipping.", filePath, err)
+			continue
+		}
+		// Ensure the file is closed when we're done with it in this iteration
+		// Use a closure to capture the current fileToZip
+		defer func(f *os.File) {
+			err := f.Close()
+			if err != nil {
+				c.Logger().Errorf("Error closing file %s: %v", f.Name(), err)
+			}
+		}(fileToZip)
+
+		// Create a new file entry in the zip archive
+		// Use the base file name (file.Name()) as the name within the zip
+		zipEntry, err := zipWriter.Create(file.Name())
+		if err != nil {
+			c.Logger().Errorf("Failed to create zip entry for %s: %v", file.Name(), err)
+			// If creating an entry fails, it might indicate a bigger issue with the writer
+			return echo.NewHTTPError(http.StatusInternalServerError, "Error creating zip archive entry.")
+		}
+
+		// Copy the file content into the zip entry
+		_, err = io.Copy(zipEntry, fileToZip)
+		if err != nil {
+			c.Logger().Errorf("Failed to copy file content for %s into zip: %v", file.Name(), err)
+			// If copying fails, something is wrong
+			return echo.NewHTTPError(http.StatusInternalServerError, "Error writing file data to zip archive.")
+		}
+
+		foundFiles = true // Mark that we have added at least one file
+	} // End of loop through directory entries
+
+	// Close the zip writer to finalize the archive *after* the loop
+	err = zipWriter.Close()
+	if err != nil {
+		c.Logger().Errorf("Failed to close zip writer: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error finalizing zip archive.")
+	}
+
+	// Check if we actually added any files
+	if !foundFiles {
+		// You could return 200 with a message, 204 No Content, or 404 Not Found depending on preference.
+		c.Logger().Infof("No files found to zip in directory: %s", storagePath)
+		// return c.NoContent(http.StatusNoContent)
+		return c.String(http.StatusOK, "No files available in the specified directory to download.")
+	}
+
+	// --- Prepare and Send Response ---
+
+	// Generate a filename for the download (e.g., "download_YYYYMMDD_HHMMSS.zip")
+	zipFileName := fmt.Sprintf("download_%s.zip", time.Now().Format("20060102_150405"))
+
+	// Set the response headers
+	c.Response().Header().Set(echo.HeaderContentType, "application/zip")
+	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", zipFileName))
+	// It's often good practice to set Content-Length if possible, though Echo might handle this
+	// c.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", buf.Len()))
+
+	// Send the zip file data as the response body
+	// Use c.Blob for sending binary data like this
+	return c.Blob(http.StatusOK, "application/zip", buf.Bytes())
+
+	// Alternative using Response().Writer:
+	// c.Response().WriteHeader(http.StatusOK)
+	// _, err = c.Response().Writer.Write(buf.Bytes())
+	// if err != nil {
+	//  	c.Logger().Errorf("Failed to write zip buffer to response: %v", err)
+	//	    // Return the error if writing fails. Echo's error handler might catch this.
+	//      return err
+	// }
+	// return nil // Indicate success
 }
