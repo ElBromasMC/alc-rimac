@@ -89,12 +89,16 @@ func (h *Handler) HandleBorradoInsert(c echo.Context) error {
 			return util.Render(c, http.StatusOK, component.ErrorMessage(fmt.Sprintf("Error al corregir datos del inventario antiguo: %v", err)))
 		}
 	} else {
-		_, err := h.ConstanciaService.GetInventarioPortatilOldBySerie(c.Request().Context(), serieAntiguo)
+		portatilOld, err := h.ConstanciaService.GetInventarioPortatilOldBySerie(c.Request().Context(), serieAntiguo)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return util.Render(c, http.StatusOK, view.BorradoAutocomplete(constancia.Inventario{}, true, serieAntiguo))
 			}
 			return util.Render(c, http.StatusOK, view.BorradoAutocomplete(constancia.Inventario{}, true, serieAntiguo))
+		}
+		err = h.ConstanciaService.UpdateInventarioPortatilOld(ctx, portatilOld.Serie, portatilOld.Serie, inventarioRimac, marca, modelo)
+		if err != nil {
+			return util.Render(c, http.StatusOK, component.ErrorMessage(fmt.Sprintf("Error al corregir datos del inventario antiguo: %v", err)))
 		}
 	}
 
