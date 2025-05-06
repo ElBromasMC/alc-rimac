@@ -946,14 +946,14 @@ func (s Constancia) GetInventarioPortatilOldBySerie(ctx context.Context, serie s
 	// Normalize serie before query
 	serie = strings.ToUpper(strings.ReplaceAll(serie, " ", ""))
 
-	query := `SELECT id, tipo_inventario, marca, modelo, serie, estado, inventario, created_at, updated_at
+	query := `SELECT id, tipo_inventario, marca, modelo, serie, estado, inventario, created_at, updated_at, constancia_id
 			  FROM inventario
 			  WHERE tipo_inventario = $1 AND serie = $2
 			  ORDER BY id ASC -- Get the first one if duplicates exist
 			  LIMIT 1`
 
 	err := s.db.QueryRow(ctx, query, constancia.InventarioPortatilOld, serie).
-		Scan(&inv.Id, &inv.TipoInventario, &inv.Marca, &inv.Modelo, &inv.Serie, &inv.Estado, &inv.Inventario, &inv.CreatedAt, &inv.UpdatedAt)
+		Scan(&inv.Id, &inv.TipoInventario, &inv.Marca, &inv.Modelo, &inv.Serie, &inv.Estado, &inv.Inventario, &inv.CreatedAt, &inv.UpdatedAt, &inv.ConstanciaID)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -966,27 +966,22 @@ func (s Constancia) GetInventarioPortatilOldBySerie(ctx context.Context, serie s
 
 // UpdateInventarioPortatilOld updates an existing PORTATILOLD inventario record,
 // identified by its originalSerie. It updates the serie, inventario (RIMAC), marca, and modelo.
-func (s Constancia) UpdateInventarioPortatilOld(ctx context.Context, originalSerie, newSerie, inventarioRimac, marca, modelo string) error {
+func (s Constancia) UpdateInventarioPortatilOld(ctx context.Context, constanciaID int64, newSerie, inventarioRimac, marca, modelo string) error {
 	// Normalize inputs
-	originalSerie = strings.ToUpper(strings.ReplaceAll(originalSerie, " ", ""))
 	newSerie = strings.ToUpper(strings.ReplaceAll(newSerie, " ", ""))
 	inventarioRimac = strings.TrimSpace(strings.ToUpper(inventarioRimac))
 	marca = strings.TrimSpace(strings.ToUpper(marca))
 	modelo = strings.TrimSpace(strings.ToUpper(modelo))
 
-	if originalSerie == "" || newSerie == "" {
+	if newSerie == "" {
 		return errors.New("campos obligatorios faltantes para la actualización del inventario")
 	}
 
-	// We need to find the specific ID first based on originalSerie and type, as serie itself is changing
 	var inventarioID int64
-	findQuery := `SELECT id FROM inventario WHERE tipo_inventario = $1 AND serie = $2 ORDER BY id ASC LIMIT 1`
-	err := s.db.QueryRow(ctx, findQuery, constancia.InventarioPortatilOld, originalSerie).Scan(&inventarioID)
+	findQuery := `SELECT id FROM inventario WHERE tipo_inventario = $1 AND constancia_id = $2 ORDER BY id ASC LIMIT 1`
+	err := s.db.QueryRow(ctx, findQuery, constancia.InventarioPortatilOld, constanciaID).Scan(&inventarioID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("no se encontró inventario PORTATILOLD con la serie original '%s' para actualizar", originalSerie)
-		}
-		return fmt.Errorf("error buscando inventario para actualizar (serie original %s): %w", originalSerie, err)
+		return fmt.Errorf("error buscando Inventario para actualizar: %w", err)
 	}
 
 	// Now update using the found ID

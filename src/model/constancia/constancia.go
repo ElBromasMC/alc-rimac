@@ -139,6 +139,7 @@ type Inventario struct {
 	Serie          string
 	Estado         string
 	Inventario     string
+	ConstanciaID   int64
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

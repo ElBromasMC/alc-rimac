@@ -80,11 +80,11 @@ func (h *Handler) HandleBorradoInsert(c echo.Context) error {
 
 	// --- 5. Perform Data Correction in 'inventario' if needed ---
 	if serieEquipoNuevo != "" {
-		serieIncorrecta, err := h.ConstanciaService.GetInventarioPortatilOldSerieByConstanciaSerie(ctx, serieEquipoNuevo)
+		constancia, err := h.ConstanciaService.GetConstanciaBySerie(ctx, serieEquipoNuevo)
 		if err != nil {
-			return util.Render(c, http.StatusOK, component.ErrorMessage("Serie Equipo Nuevo no válido"))
+			return util.Render(c, http.StatusOK, component.ErrorMessage(fmt.Sprintf("Error al corregir datos del inventario antiguo: %v", err)))
 		}
-		err = h.ConstanciaService.UpdateInventarioPortatilOld(ctx, serieIncorrecta, serieAntiguo, inventarioRimac, marca, modelo)
+		err = h.ConstanciaService.UpdateInventarioPortatilOld(ctx, constancia.Id, serieAntiguo, inventarioRimac, marca, modelo)
 		if err != nil {
 			return util.Render(c, http.StatusOK, component.ErrorMessage(fmt.Sprintf("Error al corregir datos del inventario antiguo: %v", err)))
 		}
@@ -96,7 +96,7 @@ func (h *Handler) HandleBorradoInsert(c echo.Context) error {
 			}
 			return util.Render(c, http.StatusOK, view.BorradoAutocomplete(constancia.Inventario{}, true, serieAntiguo))
 		}
-		err = h.ConstanciaService.UpdateInventarioPortatilOld(ctx, portatilOld.Serie, portatilOld.Serie, inventarioRimac, marca, modelo)
+		err = h.ConstanciaService.UpdateInventarioPortatilOld(ctx, portatilOld.ConstanciaID, portatilOld.Serie, inventarioRimac, marca, modelo)
 		if err != nil {
 			return util.Render(c, http.StatusOK, component.ErrorMessage(fmt.Sprintf("Error al corregir datos del inventario antiguo: %v", err)))
 		}
