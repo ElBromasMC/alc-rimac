@@ -400,43 +400,55 @@ func (s Constancia) BulkInsertEquipos(ctx context.Context, equipos []constancia.
 	return nil // Success
 }
 
-// BulkInsertClientes performs a bulk insert of a list of Cliente into the clientes table.
-// It avoids conflict errors by first inserting into a temporary staging table.
+// BulkInsertClientes performs a bulk insert or update of a list of Cliente into the clientes table.
+// If a cliente with the same 'sap_id' already exists, its 'usuario' field will be updated.
 func (s Constancia) BulkInsertClientes(ctx context.Context, clientes []constancia.Cliente) error {
 	if len(clientes) == 0 {
-		return nil // nothing to insert
+		return nil // nothing to insert or update
 	}
 
 	// Prepare rows for CopyFrom: sap_id, usuario.
 	rows := make([][]interface{}, len(clientes))
 	for i, cl := range clientes {
+		// Normalize the cliente data, especially SapId which is the conflict target.
+		normalizedCl, err := cl.Normalize()
+		if err != nil {
+			// Handle normalization error. For this example, we return an error for the batch.
+			return fmt.Errorf("failed to normalize cliente at index %d (SapId: %s): %w", i, cl.SapId, err)
+		}
 		rows[i] = []interface{}{
-			cl.SapId,
-			cl.Usuario,
+			normalizedCl.SapId, // Ensure this is normalized as it's the conflict target
+			normalizedCl.Usuario,
 		}
 	}
 
 	// Start a transaction so that all operations are atomic.
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
+	// Defer rollback in case of error or panic
 	defer func() {
-		// Ensure the transaction is rolled back in case of an error.
-		if err != nil {
-			tx.Rollback(ctx)
+		if r := recover(); r != nil { // Capture panics
+			_ = tx.Rollback(ctx)
+			panic(r) // Re-throw panic after attempting rollback
+		} else if err != nil { // Capture errors returned by the function
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				err = fmt.Errorf("original error: %v; rollback error: %w", err, rbErr)
+			}
 		}
 	}()
 
-	// Create a temporary staging table with the same structure (only needed columns) but no UNIQUE constraints.
+	// Create a temporary staging table with the same structure (only needed columns)
+	// but no UNIQUE constraints. ON COMMIT DROP ensures it's cleaned up.
 	tempTableSQL := `
-        CREATE TEMP TABLE temp_clientes (
-            sap_id VARCHAR(50),
-            usuario VARCHAR(255)
-        ) ON COMMIT DROP;
-    `
+		CREATE TEMP TABLE temp_clientes (
+			sap_id VARCHAR(50),
+			usuario VARCHAR(255)
+		) ON COMMIT DROP;
+	`
 	if _, err = tx.Exec(ctx, tempTableSQL); err != nil {
-		return err
+		return fmt.Errorf("failed to create temp_clientes table: %w", err)
 	}
 
 	// Bulk copy into the temporary table.
@@ -447,23 +459,30 @@ func (s Constancia) BulkInsertClientes(ctx context.Context, clientes []constanci
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to copy data to temp_clientes table: %w", err)
 	}
 
 	// Upsert from the temporary table into the main clientes table.
-	// Using ON CONFLICT DO NOTHING ensures that duplicate sap_id entries are ignored.
+	// ON CONFLICT (sap_id) DO UPDATE SET will update the 'usuario' and 'updated_at' fields.
+	// 'created_at' will be set by its DEFAULT NOW() only for new rows.
 	upsertSQL := `
-        INSERT INTO clientes (sap_id, usuario)
-        SELECT sap_id, usuario
-        FROM temp_clientes
-        ON CONFLICT (sap_id) DO NOTHING;
-    `
+		INSERT INTO clientes (sap_id, usuario, created_at, updated_at)
+		SELECT sap_id, usuario, NOW(), NOW()
+		FROM temp_clientes
+		ON CONFLICT (sap_id) DO UPDATE SET
+			usuario = EXCLUDED.usuario,
+			updated_at = NOW();
+	`
 	if _, err = tx.Exec(ctx, upsertSQL); err != nil {
-		return err
+		return fmt.Errorf("failed to upsert data from temp_clientes to clientes: %w", err)
 	}
 
 	// Commit the transaction.
-	return tx.Commit(ctx)
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil // Success
 }
 
 func (s Constancia) GeneratePDF(ctx context.Context, filename string, c constancia.Constancia, inventarios []constancia.Inventario) error {
