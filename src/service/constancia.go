@@ -300,36 +300,7 @@ func (s Constancia) UpdateConstanciaAndInventarios(ctx context.Context, c consta
 }
 
 // BulkInsertEquipos performs a bulk insert of a list of Equipo into the equipos table.
-//func (s Constancia) BulkInsertEquipos(ctx context.Context, equipos []constancia.Equipo) error {
-//	if len(equipos) == 0 {
-//		return nil // nothing to insert
-//	}
-//
-//	// Prepare rows for CopyFrom: tipo_equipo, marca, mtm, modelo, serie, activo_fijo.
-//	rows := make([][]interface{}, len(equipos))
-//	for i, eq := range equipos {
-//		rows[i] = []interface{}{
-//			eq.TipoEquipo,
-//			eq.Marca,
-//			eq.MTM,
-//			eq.Modelo,
-//			eq.Serie,
-//			eq.ActivoFijo,
-//		}
-//	}
-//
-//	// Perform the bulk insert using CopyFrom.
-//	_, err := s.db.CopyFrom(
-//		ctx,
-//		pgx.Identifier{"equipos"},
-//		[]string{"tipo_equipo", "marca", "mtm", "modelo", "serie", "activo_fijo"},
-//		pgx.CopyFromRows(rows),
-//	)
-//	return err
-//}
-
-// BulkInsertEquipos performs a bulk insert of a list of Equipo into the equipos table.
-// It avoids conflict errors by first inserting into a temporary staging table.
+// If an equipo with the same 'serie' already exists, it will be updated.
 func (s Constancia) BulkInsertEquipos(ctx context.Context, equipos []constancia.Equipo) error {
 	if len(equipos) == 0 {
 		return nil // nothing to insert
@@ -338,29 +309,43 @@ func (s Constancia) BulkInsertEquipos(ctx context.Context, equipos []constancia.
 	// Prepare rows for CopyFrom: tipo_equipo, marca, mtm, modelo, serie, activo_fijo.
 	rows := make([][]interface{}, len(equipos))
 	for i, eq := range equipos {
+		// It's a good practice to ensure data is normalized before DB operations
+		normalizedEq, err := eq.Normalize()
+		if err != nil {
+			// Decide how to handle normalization errors: skip this item, return error for the batch, etc.
+			// For this example, we'll return an error for the whole batch if one item fails normalization.
+			return fmt.Errorf("failed to normalize equipo at index %d (serie: %s): %w", i, eq.Serie, err)
+		}
 		rows[i] = []interface{}{
-			eq.TipoEquipo,
-			eq.Marca,
-			eq.MTM,
-			eq.Modelo,
-			eq.Serie,
-			eq.ActivoFijo,
+			normalizedEq.TipoEquipo,
+			normalizedEq.Marca,
+			normalizedEq.MTM,
+			normalizedEq.Modelo,
+			normalizedEq.Serie, // This is the conflict target, ensure it's correctly normalized
+			normalizedEq.ActivoFijo,
 		}
 	}
 
 	// Begin a transaction so that the entire process is atomic.
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	// Rollback the transaction if any error occurs.
+	// Defer rollback in case of error or panic
 	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
+		if r := recover(); r != nil { // Capture panics
+			_ = tx.Rollback(ctx)
+			panic(r) // Re-throw panic after attempting rollback
+		} else if err != nil { // Capture errors returned by the function
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				// Log or handle the rollback error, e.g., by wrapping it with the original error
+				err = fmt.Errorf("original error: %v; rollback error: %w", err, rbErr)
+			}
 		}
 	}()
 
 	// Create a temporary staging table without constraints.
+	// ON COMMIT DROP ensures the temp table is cleaned up automatically.
 	tempTableSQL := `
 		CREATE TEMP TABLE temp_equipos (
 			tipo_equipo VARCHAR(100),
@@ -372,7 +357,7 @@ func (s Constancia) BulkInsertEquipos(ctx context.Context, equipos []constancia.
 		) ON COMMIT DROP;
 	`
 	if _, err = tx.Exec(ctx, tempTableSQL); err != nil {
-		return err
+		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 
 	// Bulk load into the temporary table using CopyFrom.
@@ -383,50 +368,37 @@ func (s Constancia) BulkInsertEquipos(ctx context.Context, equipos []constancia.
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to copy data to temp table: %w", err)
 	}
 
 	// Insert data from the staging table to the main equipos table.
-	// ON CONFLICT (serie) DO NOTHING ensures that duplicate 'serie'
-	// values are ignored, whether duplicates exist in the input slice or in the database already.
+	// ON CONFLICT (serie) DO UPDATE SET will update the existing row.
+	// EXCLUDED refers to the values from the row that was proposed for insertion (from temp_equipos).
+	// We also update the 'updated_at' field to the current timestamp.
+	// 'created_at' will be set by its DEFAULT NOW() only for new rows and will not be changed on update.
 	upsertSQL := `
-		INSERT INTO equipos (tipo_equipo, marca, mtm, modelo, serie, activo_fijo)
-		SELECT tipo_equipo, marca, mtm, modelo, serie, activo_fijo
+		INSERT INTO equipos (tipo_equipo, marca, mtm, modelo, serie, activo_fijo, created_at, updated_at)
+		SELECT tipo_equipo, marca, mtm, modelo, serie, activo_fijo, NOW(), NOW()
 		FROM temp_equipos
-		ON CONFLICT (serie) DO NOTHING;
+		ON CONFLICT (serie) DO UPDATE SET
+			tipo_equipo = EXCLUDED.tipo_equipo,
+			marca = EXCLUDED.marca,
+			mtm = EXCLUDED.mtm,
+			modelo = EXCLUDED.modelo,
+			activo_fijo = EXCLUDED.activo_fijo,
+			updated_at = NOW();
 	`
 	if _, err = tx.Exec(ctx, upsertSQL); err != nil {
-		return err
+		return fmt.Errorf("failed to upsert data from temp table to equipos: %w", err)
 	}
 
 	// Commit the transaction.
-	return tx.Commit(ctx)
-}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 
-// BulkInsertClientes performs a bulk insert of a list of Cliente into the clientes table.
-//func (s Constancia) BulkInsertClientes(ctx context.Context, clientes []constancia.Cliente) error {
-//	if len(clientes) == 0 {
-//		return nil // nothing to insert
-//	}
-//
-//	// Prepare rows for CopyFrom: sap_id, usuario.
-//	rows := make([][]interface{}, len(clientes))
-//	for i, cl := range clientes {
-//		rows[i] = []interface{}{
-//			cl.SapId,
-//			cl.Usuario,
-//		}
-//	}
-//
-//	// Perform the bulk insert using CopyFrom.
-//	_, err := s.db.CopyFrom(
-//		ctx,
-//		pgx.Identifier{"clientes"},
-//		[]string{"sap_id", "usuario"},
-//		pgx.CopyFromRows(rows),
-//	)
-//	return err
-//}
+	return nil // Success
+}
 
 // BulkInsertClientes performs a bulk insert of a list of Cliente into the clientes table.
 // It avoids conflict errors by first inserting into a temporary staging table.
